@@ -26,12 +26,29 @@ SOFTWARE.
 --- Churchtools API Helper
 */
 
+function getCoreDomain($domain) {
+    $pos = strpos($domain, "://");
+    if($pos !== false)
+        $domain = substr($domain, $pos + 3);
+    
+    $pos = strpos($domain, "/");
+    if($pos !== false)
+        $domain = substr($domain, 0, $pos);
+    
+    $pos = strpos($domain, "?");
+    if($pos !== false)
+        $domain = substr($domain, 0, $pos);
+    
+    return $domain;
+}
+
 function &getCookies(){
 	static $CT_cookies = array();
 	return $CT_cookies;
 }
 
 function CT_getCookies($domain) {
+    $domain = getCoreDomain($domain);
 	$CT_cookies = &getCookies();
     if(!isset($CT_cookies[$domain])){
         $CT_cookies[$domain] = array();
@@ -44,7 +61,8 @@ function CT_getCookies($domain) {
 }
 
 function CT_saveCookies($domain, $r) {
-	$CT_cookies = &getCookies();
+    $domain = getCoreDomain($domain);
+    $CT_cookies = &getCookies();
 	foreach ($r as $hdr) {
 		if (preg_match('/^Set-Cookie:\s*([^;]+)/', $hdr, $matches)) {
 			parse_str($matches[1], $tmp);
@@ -52,6 +70,20 @@ function CT_saveCookies($domain, $r) {
 		}
 	}
 }
+
+function CT_getCSRFToken($url){
+    static $token = array();
+    
+    $domain = getCoreDomain($url);
+    
+    if(isset($token[$domain]) && !empty($token[$domain]))
+        return $token[$domain];
+    
+    $result = CTNew_getRequest("https://$domain/api/csrftoken", array());
+    $token[$domain] = $result->data;
+    return $token[$domain];
+}
+
 
 function CT_sendRequestMultipart($domain, $url, $content, $delimiter) {
 	$options = array(
@@ -71,10 +103,14 @@ function CT_sendRequestMultipart($domain, $url, $content, $delimiter) {
 	return $obj;
 }
 
-function CT_sendRequest($domain, $url, $data) {
+function CT_sendRequest($domain, $url, $data, $csrf_token_required = true) {
+    $header = "Cookie: ". CT_getCookies($domain) . "\r\nContent-type: application/x-www-form-urlencoded\r\n";
+    if($csrf_token_required)
+        $header .= "csrf-token: " . CT_getCSRFToken($domain) . "\r\n";
+    
 	$options = array(
 		'http'=>array(
-			'header' => "Cookie: ". CT_getCookies($domain) . "\r\nContent-type: application/x-www-form-urlencoded\r\n",
+			'header' => $header,
 			'method' => 'POST',
 			'content' => http_build_query($data),
 		)
@@ -89,6 +125,25 @@ function CT_sendRequest($domain, $url, $data) {
 	return $obj;
 }
 
+function CTNew_getRequest($url, $data)
+{
+    $options = array(
+		'http'=>array(
+			'header' => "Cookie: ". CT_getCookies($url) . "\r\nContent-type: application/x-www-form-urlencoded\r\n",
+			'method' => 'GET',
+			'content' => http_build_query($data)
+		)
+	);
+	$context = stream_context_create($options);
+	$result = file_get_contents($url, false, $context);
+	$obj = json_decode($result);
+	if ($obj->status == 'error') {
+		echo "There is an error: $obj->message";
+	}
+	CT_saveCookies($url, $http_response_header);
+	return $obj;
+}
+
 function CT_login($domain, $token, $id){
 	$url = $domain . 'login/ajax';
 
@@ -96,9 +151,9 @@ function CT_login($domain, $token, $id){
 	$data = array('func' => 'loginWithToken', 
 				  'token' => $token,
 				  'id' => $id,
-				  'directtool' => 'GroupViz'
+				  'directtool' => 'API Tools'
 			);
-	$result = CT_sendRequest($domain, $url, $data);
+	$result = CT_sendRequest($domain, $url, $data, false);
 	return ($result->status == "success");
 }
 
@@ -109,9 +164,9 @@ function CT_loginAuth($domain, $email, $pw){
 	$data = array('func' => 'login', 
 				  'email' => $email,
 				  'password' => $pw,
-				  'directtool' => 'GroupViz'
+				  'directtool' => 'API Tools'
 			);
-	$result = CT_sendRequest($domain, $url, $data);
+	$result = CT_sendRequest($domain, $url, $data, false);
 	return ($result->status == "success");
 }
 
@@ -296,6 +351,13 @@ function CT_getPersonDetails($domain, $id) {
 	$url = $domain . 'churchdb/ajax';
     $data = array('func' => 'getPersonDetails', 'id' => $id);
 	$ret = CT_sendRequest($domain, $url, $data);
+	return $ret;
+}
+
+function CTNew_getEventAgenda($domain, $id) {
+	$url = $domain . '/api/events/' . $id . '/agenda';
+    $data = array();
+	$ret = CTNew_getRequest($url, $data);
 	return $ret;
 }
 
