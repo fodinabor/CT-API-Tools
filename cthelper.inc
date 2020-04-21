@@ -64,7 +64,7 @@ function CT_saveCookies($domain, $r) {
     $domain = getCoreDomain($domain);
     $CT_cookies = &getCookies();
 	foreach ($r as $hdr) {
-		if (preg_match('/^Set-Cookie:\s*([^;]+)/', $hdr, $matches)) {
+		if (preg_match('/^Set-Cookie:\s*([^;]+)/i', $hdr, $matches)) {
 			parse_str($matches[1], $tmp);
 			$CT_cookies[$domain] += $tmp;
 		}
