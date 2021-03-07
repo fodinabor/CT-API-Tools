@@ -4,11 +4,11 @@ I have pulled a fork to build it for my needs. There is not much in it yet, but 
 
 * Integration into other systems (Contao)
     * Namespaces or even wrapping into a class
-* Use of API V1 (ajax) and API V2 (REST)
+* Support of API V1 (ajax) as well as API V2 (REST)
     * It is a bit a problem that domain already has the query in it
 * Playground to play around with the API
 * More documentation
-* Handling of the credentials   
+* Improve Handling of the credentials   
 * use https://github.com/guzzle/guzzle
 
 # CT-API-Tools

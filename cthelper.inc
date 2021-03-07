@@ -95,7 +95,7 @@ function CT_getCookies($domain)
  * save recceived cookies
  *
  * @param $domain the url as to be specified in the api calls e.g. https://mychurch.church.tools/?q=api/ajax
- * @param $r  the result header of the most recent call
+ * @param $r  the result headers of the most recent call
  *
  * for internal use
  */
@@ -213,7 +213,7 @@ function CT_sendRequest($domain, $url, $data, $csrf_token_required = true)
  * @param $body array to be sent as JSON in the body
  * @return Array the respons
  *
- * note you can use the explicit parametrers or an Array with the Arguments
+ * note you can use the explicit parameters or an Array with the Arguments
  *
  * $report = [
  *   'url' => $url ,
@@ -255,7 +255,7 @@ function CTV2_sendRequest($method, $url = null, $data = null, $body = null)
     $result = file_get_contents($_url, false, $context);
     $obj = json_decode($result);
     if (!isset($obj)) {
-        echo("could noth handle result");
+        echo("could not handle result");
         var_dump($http_response_header);
         var_dump($_url);
         var_dump($result);
@@ -622,7 +622,7 @@ function CT_getAllPersonData($domain)
 function CT_getRessourceBookings($domain)
 {
     $url = $domain . 'churchresource/ajax';
-    $data = array('func' => 'getBookings', 'from' => "0", 'to' => "1");
+    $data = array('func' => 'getBookings');
     $ret = CT_sendRequest($domain, $url, $data);
     return $ret;
 }
