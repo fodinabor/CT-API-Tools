@@ -194,12 +194,77 @@ function CT_sendRequest($domain, $url, $data, $csrf_token_required = true)
     $context = stream_context_create($options);
     $result = file_get_contents($url, false, $context);
     $obj = json_decode($result);
-    if ($obj->status == 'error') {
-        echo "There is an error: $obj->message";
+    if (!isset($obj)) {
+        echo("could noth handle result");
+        var_dump($http_response_header);
+        var_dump($url);
+        var_dump($result);
+        echo("end could noth handle result");
     }
     CT_saveCookies($domain, $http_response_header);
     return $obj;
 }
+
+
+/**
+ * @param $method HTTP-Method  or Array with parameters
+ * @param $url the url
+ * @param $data array data to be encodd in the url
+ * @param $body array to be sent as JSON in the body
+ * @return Array the respons
+ *
+ * note you can use the explicit parametrers or an Array with the Arguments
+ *
+ * $report = [
+ *   'url' => $url ,
+ *   'method' => "PATCH",
+ *   'data' => [],
+ *   'body' => json_decode($data_json),
+ * ];
+ *
+ */
+function CTV2_sendRequest($method, $url = null, $data = null, $body = null)
+{
+    if (is_array($method)) {
+        $_method = $method['method'];
+        $_url = $method['url'];
+        $_data = array_key_exists('data', $method)? $method['data']: null;
+        $_body = array_key_exists('body', $method)? $method['body']: null;
+    } else {
+        $_method = $method;
+        $_url = $url;
+        $_data = $data;
+        $_body = $body;
+    }
+
+    if (isset ($_data)) {
+        $_url = $_url . "?" . http_build_query($_data);
+    }
+
+    $options = array(
+        'http' => array(
+            'header' => "Cookie: " . CT_getCookies($_url)
+                . "\r\nContent-type: application/json"
+                . "\r\naccept: application/json",
+            'method' => $_method,
+            'content' => json_encode($_body),
+            'ignore_errors' => true,
+        )
+    );
+    $context = stream_context_create($options);
+    $result = file_get_contents($_url, false, $context);
+    $obj = json_decode($result);
+    if (!isset($obj)) {
+        echo("could noth handle result");
+        var_dump($http_response_header);
+        var_dump($_url);
+        var_dump($result);
+        echo("end could noth handle result");
+    }
+    CT_saveCookies($_url, $http_response_header);
+    return $obj;
+}
+
 
 /**
  * @param $url
@@ -212,14 +277,20 @@ function CTNew_getRequest($url, $data)
         'http' => array(
             'header' => "Cookie: " . CT_getCookies($url) . "\r\nContent-type: application/x-www-form-urlencoded\r\n",
             'method' => 'GET',
-            'content' => http_build_query($data)
+            'content' => http_build_query($data),
+            'ignore_errors' => true
         )
     );
+    $finalurl = $url . "?" . http_build_query($data);
     $context = stream_context_create($options);
-    $result = file_get_contents($url, false, $context);
+    $result = file_get_contents($finalurl, false, $context);
     $obj = json_decode($result);
-    if (property_exists($obj, 'status') && $obj->status == 'error') {
-        echo "There is an error: $obj->message";
+    if (!isset($obj)) {
+        echo("could noth handle result");
+        var_dump($http_response_header);
+        var_dump($url);
+        var_dump($result);
+        echo("end could noth handle result");
     }
     CT_saveCookies($url, $http_response_header);
     return $obj;

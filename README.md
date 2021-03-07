@@ -1,3 +1,16 @@
+# About this repo
+
+I have pulled a fork to build it for my needs. There is not much in it yet, but it will come.
+
+* Integration into other systems (Contao)
+    * Namespaces or even wrapping into a class
+* Use of API V1 (ajax) and API V2 (REST)
+    * It is a bit a problem that domain already has the query in it
+* Playground to play around with the API
+* More documentation
+* Handling of the credentials   
+* use https://github.com/guzzle/guzzle
+
 # CT-API-Tools
 PHP scripts, that make imports via the ChurchTools API or similar very easy.
 
@@ -34,4 +47,6 @@ this generates the ressourcebookings of the day as html file - to be used for di
 # More information
 
 * https://intern.church.tools/?q=churchwiki#WikiView/filterWikicategory_id:0/doc:API/follow_redirect:true/
-* 
+* https://api.church.tools/
+
+
