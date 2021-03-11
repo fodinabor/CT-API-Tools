@@ -6,14 +6,13 @@
  *
  *
  * "Keine ausreichende Berechtigung. Das Recht 'edit relations (\"Verwaltung\")' ist notwendig."
- * "Keine ausreichende Berechtigung. Das Recht 'view person (\"Verwaltung\")' ist notwendig.",
  */
 
 $url = "$ctdomain/api/persons";
 $data = ['page' => 1, 'limit' => 500];
 $data_json = <<< EOT
 {
-  "p1": {
+  "vater": {
     "firstName": "zz_vater",
     "lastName": "testfamilie",
     "departmentIds": [
@@ -27,7 +26,7 @@ $data_json = <<< EOT
     "campusId": 0,
     "statusId": 0
   },
-  "p2": {
+  "mutter": {
     "firstName": "zz_mutter",
     "lastName": "testfamilie",
     "departmentIds": [
@@ -41,7 +40,7 @@ $data_json = <<< EOT
     "campusId": 0,
     "statusId": 0
   },
-  "p3": {
+  "kind1": {
     "firstName": "zz_kind-1",
     "lastName": "testfamilie",
     "departmentIds": [
@@ -56,8 +55,8 @@ $data_json = <<< EOT
     "statusId": 0
   },
 
-  "p4": {
-    "firstName": "zz_kind-1",
+  "kind2": {
+    "firstName": "zz_kind-2",
     "lastName": "testfamilie",
     "departmentIds": [
       1
@@ -76,25 +75,59 @@ EOT;
 $report = [
     'url' => "$ctdomain/api/persons" ,
     'method' => "POST",
-    'data' => ['id' => 77],
-    'body' => json_decode($data_json),
+    'data' => json_decode($data_json),
 ];
 
 $result = [];
 
-//$result['p1'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['p1']);
-//$result['p2'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['p2']);
-//$result['p2'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json)['p2']);
-//$result['p2'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json)['p2']);
+$result['vater'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['vater']);
+$result['mutter'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['mutter']);
+$result['kind1'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['kind1']);
+$result['kind2'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['kind2']);
 
 
 $url = $ajax_domain . 'churchdb/ajax';
+
 $data = array(
     'func' => 'add_rel',
-    'parent_id' =>  147, //$result['p1']['data']['id'],
-    'child_id' => 150, //$result['p2']['data']['id'],
-    'relation_id' => 2
+    'id' =>  $result['vater']['data']['id'],
+    'child_id' => $result['mutter']['data']['id'],
+    'rel_id' => "2"  // Ehepartner
 );
-$result['p1-p2'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+$result['vater-mutter'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+
+$data = array(
+    'func' => 'add_rel',
+    'id' =>  $result['vater']['data']['id'],
+    'child_id' => $result['kind1']['data']['id'],
+    'rel_id' => "1"  // kind
+);
+$result['vater-kind1'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+
+$data = array(
+    'func' => 'add_rel',
+    'id' =>  $result['vater']['data']['id'],
+    'child_id' => $result['kind2']['data']['id'],
+    'rel_id' => "1"  // kind
+);
+$result['vater-kind2'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+
+$data = array(
+    'func' => 'add_rel',
+    'id' =>  $result['mutter']['data']['id'],
+    'child_id' => $result['kind1']['data']['id'],
+    'rel_id' => "1"  // kind
+);
+$result['mutter-kind1'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+
+
+$data = array(
+    'func' => 'add_rel',
+    'id' =>  $result['mutter']['data']['id'],
+    'child_id' => $result['kind2']['data']['id'],
+    'rel_id' => "1"  // kind
+);
+$result['muter-kind2'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+
 
 $report['result'] = $result;
