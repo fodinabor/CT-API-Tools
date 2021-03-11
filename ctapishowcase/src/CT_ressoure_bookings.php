@@ -1,9 +1,9 @@
 <?php
-$url = "CT_getRessourceBookings($active_domain)";
+$url = "CT_getRessourceBookings($ajax_domain)";
 $report = [
-    'function' => "CT_getRessourceBookings($active_domain)",
+    'function' => "CT_getRessourceBookings($ajax_domain)",
 ];
-$allRessources = CT_getRessourceBookings($active_domain);
+$allRessources = CT_getRessourceBookings($ajax_domain);
 
 $report['response'] = $allRessources;
 

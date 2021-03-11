@@ -9,7 +9,6 @@ require_once('CT-credentialstore.php');
 /**
  * find the showcases to be processed
  */
-
 if (count($argv) == 2){
     $showcases = glob("src/*{$argv[1]}*.php");
 } else {
@@ -22,11 +21,15 @@ if (count($argv) == 2){
  */
 
 $ctdomain = CT_APITOOLS\CREDENTIALS['ctdomain'];
-$active_domain = $ctdomain . "/?q=";
+$ajax_domain = $ctdomain . "/?q=";
 $email = CT_APITOOLS\CREDENTIALS['ctemail'];
+$email = CT_APITOOLS\CREDENTIALS['ctusername'];
 $password = CT_APITOOLS\CREDENTIALS['ctpassword'];
 
-$result = CT_loginAuth($active_domain, $email, $password);
+$email = 'admin';
+$password = 'admin';
+
+$result = CT_loginAuth($ajax_domain, $email, $password);
 if (!$result) {
     echo print_r($result, true);
     die("CT login not successful:");
@@ -57,5 +60,5 @@ foreach ($showcases as $showcase) {
  */
 
 
-CT_logout($active_domain);
+CT_logout($ajax_domain);
 echo("logged out");
