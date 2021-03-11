@@ -253,7 +253,7 @@ function CTV2_sendRequest($method, $url = null, $data = null, $body = null)
     );
     $context = stream_context_create($options);
     $result = file_get_contents($_url, false, $context);
-    $obj = json_decode($result);
+    $obj = json_decode($result, true);
     if (!isset($obj)) {
         echo("could not handle result");
         var_dump($http_response_header);
