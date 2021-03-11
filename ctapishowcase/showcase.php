@@ -23,11 +23,7 @@ if (count($argv) == 2){
 $ctdomain = CT_APITOOLS\CREDENTIALS['ctdomain'];
 $ajax_domain = $ctdomain . "/?q=";
 $email = CT_APITOOLS\CREDENTIALS['ctemail'];
-$email = CT_APITOOLS\CREDENTIALS['ctusername'];
 $password = CT_APITOOLS\CREDENTIALS['ctpassword'];
-
-$email = 'admin';
-$password = 'admin';
 
 $result = CT_loginAuth($ajax_domain, $email, $password);
 if (!$result) {
