@@ -168,7 +168,7 @@ function CT_sendRequestMultipart($domain, $url, $content, $delimiter)
 /**
  * send a request
  *
- * @param $domain
+ * @param $domain  - The
  * @param $url
  * @param $data
  * @param bool $csrf_token_required
@@ -177,7 +177,7 @@ function CT_sendRequestMultipart($domain, $url, $content, $delimiter)
  *
  *
  */
-function CT_sendRequest($domain, $url, $data, $csrf_token_required = true)
+function CTV1_sendRequest($domain, $url, $data, $csrf_token_required = true)
 {
     $header = "Cookie: " . CT_getCookies($domain) . "\r\nContent-type: application/x-www-form-urlencoded\r\n";
     if ($csrf_token_required) {
@@ -193,13 +193,18 @@ function CT_sendRequest($domain, $url, $data, $csrf_token_required = true)
     );
     $context = stream_context_create($options);
     $result = file_get_contents($url, false, $context);
-    $obj = json_decode($result);
+    $obj = json_decode($result, true);
     if (!isset($obj)) {
-        echo("could noth handle result");
-        var_dump($http_response_header);
-        var_dump($url);
-        var_dump($result);
-        echo("end could noth handle result");
+        return [
+            'status' => 'fail',
+            'message' => $result ? $result : $http_response_header[0],
+            'response' => ['data'=> []],  // only to provide the empty result
+            'response_header' => $http_response_header,
+            'request' => [
+            'url' => $url,
+            'data' => $data,
+        ]
+        ];
     }
     CT_saveCookies($domain, $http_response_header);
     return $obj;
@@ -209,7 +214,7 @@ function CT_sendRequest($domain, $url, $data, $csrf_token_required = true)
 /**
  * @param $method HTTP-Method  or Array with parameters
  * @param $url the url
- * @param $data array data to be encodd in the url
+ * @param $query array data to be encodd in the url
  * @param $body array to be sent as JSON in the body
  * @return Array the respons
  *
@@ -219,11 +224,11 @@ function CT_sendRequest($domain, $url, $data, $csrf_token_required = true)
  *   'url' => $url ,
  *   'method' => "PATCH",
  *   'data' => [],
- *   'body' => json_decode($data_json),
+ *   'body' => String request body
  * ];
  *
  */
-function CTV2_sendRequest($method, $url = null, $data = null, $body = null)
+function CTV2_sendRequest($method, $url = null, $query = null, $body = null)
 {
     if (is_array($method)) {
         $_method = $method['method'];
@@ -233,7 +238,7 @@ function CTV2_sendRequest($method, $url = null, $data = null, $body = null)
     } else {
         $_method = $method;
         $_url = $url;
-        $_data = $data;
+        $_data = $query;
         $_body = $body;
     }
 
@@ -255,11 +260,17 @@ function CTV2_sendRequest($method, $url = null, $data = null, $body = null)
     $result = file_get_contents($_url, false, $context);
     $obj = json_decode($result, true);
     if (!isset($obj)) {
-        echo("could not handle result");
-        var_dump($http_response_header);
-        var_dump($_url);
-        var_dump($result);
-        echo("end could noth handle result");
+        return [
+            'status' => 'fail',
+            'message' => $result ? $result : $http_response_header[0],
+            'response' => ['data'=> []],  // only to provide the empty result
+            'response_header' => $http_response_header,
+            'request' => [
+                'url' => $_url,
+                'data' => $query,
+                'body' => $body
+            ]
+        ];
     }
     CT_saveCookies($_url, $http_response_header);
     return $obj;
@@ -314,8 +325,8 @@ function CT_login($domain, $token, $id)
         'id' => $id,
         'directtool' => 'API Tools'
     );
-    $result = CT_sendRequest($domain, $url, $data, false);
-    return ($result->status == "success");
+    $result = CTV1_sendRequest($domain, $url, $data, false);
+    return $result;
 }
 
 
@@ -323,7 +334,7 @@ function CT_login($domain, $token, $id)
  * @param $domain
  * @param $email
  * @param $pw
- * @return bool
+ * @return Array 'status' => 'success'| 'fail'
  */
 function CT_loginAuth($domain, $email, $pw)
 {
@@ -336,8 +347,8 @@ function CT_loginAuth($domain, $email, $pw)
         'password' => $pw,
         'directtool' => 'API Tools'
     );
-    $result = CT_sendRequest($domain, $url, $data, false);
-    return ($result->status == "success");
+    $result = CTV1_sendRequest($domain, $url, $data, false);
+    return ($result);
 }
 
 /**
@@ -348,7 +359,7 @@ function CT_logout($domain)
     $url = $domain . 'login/ajax';
 
     $data = array('func' => 'logout');
-    $result = CT_sendRequest($domain, $url, $data);
+    $result = CTV1_sendRequest($domain, $url, $data);
 }
 
 /**
@@ -363,7 +374,7 @@ function CT_getCTDbMasterData($domain)
     }
     $url = $domain . 'churchdb/ajax';
     $data = array('func' => 'getMasterData');
-    $CTDbMaster[$domain] = CT_sendRequest($domain, $url, $data);
+    $CTDbMaster[$domain] = CTV1_sendRequest($domain, $url, $data);
     return $CTDbMaster[$domain];
 }
 
@@ -379,7 +390,7 @@ function CT_getCTAuthMasterData($domain)
     }
     $url = $domain . 'churchauth/ajax';
     $data = array('func' => 'getMasterData');
-    $CTAuthMaster[$domain] = CT_sendRequest($domain, $url, $data);
+    $CTAuthMaster[$domain] = CTV1_sendRequest($domain, $url, $data);
     return $CTAuthMaster[$domain];
 }
 
@@ -399,7 +410,7 @@ function CT_createGroup($domain, $name, $groupTypeId, $groupStatus)
         'Inputf_grouptype' => $groupTypeId,
         'Inputf_groupstatus' => $groupStatus
     );
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -418,7 +429,7 @@ function CT_setParent($domain, $child, $parent)
         'childId' => $child,
         'parentId' => $parent
     );
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -442,7 +453,7 @@ function CT_addAuthStatus($domain, $id, $data)
         'domain_id' => $id,
         'data' => json_encode($data)
     );
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -466,7 +477,7 @@ function CT_addAuthGroupType($domain, $id, $data)
         'domain_id' => $id,
         'data' => json_encode($data)
     );
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -491,7 +502,7 @@ function CT_addAuthGroup($domain, $id, $data)
         'domain_id' => $id,
         'data' => json_encode($data)
     );
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -523,7 +534,7 @@ function CT_getSongs($domain)
 {
     $url = $domain . 'churchservice/ajax';
     $data = array('func' => 'getAllSongs');
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -536,7 +547,7 @@ function CT_deleteSong($domain, $id)
 {
     $url = $domain . 'churchservice/ajax';
     $data = array('func' => 'deleteSong', 'id' => $id);
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -564,7 +575,7 @@ function CT_addSong($domain, $title, $author, $copy, $ccli)
         'beat' => '',
         'comments[domain_type]' => 'arrangement'
     );
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -577,7 +588,7 @@ function CT_deleteSongFile($domain, $id)
 {
     $url = $domain . 'churchservice/ajax';
     $data = array('func' => 'delFile', 'id' => $id);
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -591,7 +602,7 @@ function CT_addSongTag($domain, $id, $tagId)
 {
     $url = $domain . 'churchservice/ajax';
     $data = array('func' => 'addSongTag', 'id' => $id, 'tag_id' => $tagId);
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -599,7 +610,7 @@ function CT_deletePersonTag($domain, $id, $tag_id)
 {
     $url = $domain . 'churchdb/ajax';
     $data = array('func' => 'delPersonTag', 'id' => $id, 'tag_id' => $tag_id);
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -611,7 +622,7 @@ function CT_getAllPersonData($domain)
 {
     $url = $domain . 'churchdb/ajax';
     $data = array('func' => 'getAllPersonData');
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -623,7 +634,7 @@ function CT_getRessourceBookings($domain)
 {
     $url = $domain . 'churchresource/ajax';
     $data = array('func' => 'getBookings');
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -646,7 +657,7 @@ function CT_addPersonGroupRelation($domain, $id, $g_id, $memberstatus_id, $comme
         'date' => date('Y-m-d'),
         'comment' => $comment
     );
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 
@@ -659,7 +670,7 @@ function CT_getPersonDetails($domain, $id)
 {
     $url = $domain . 'churchdb/ajax';
     $data = array('func' => 'getPersonDetails', 'id' => $id);
-    $ret = CT_sendRequest($domain, $url, $data);
+    $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
 }
 

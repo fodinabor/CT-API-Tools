@@ -3,6 +3,7 @@
 /*
  *
  * churchdb:view, churchdb:view alldata(-1), churchdb:view memberliste, churchdb:security level person(-1)
+ *
  */
 
 $url = "$ctdomain/api/persons";

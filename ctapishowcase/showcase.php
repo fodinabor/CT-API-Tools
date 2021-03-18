@@ -22,14 +22,17 @@ if (count($argv) == 2){
 
 $ctdomain = CT_APITOOLS\CREDENTIALS['ctdomain'];
 $ajax_domain = $ctdomain . "/?q=";
-$email = CT_APITOOLS\CREDENTIALS['ctemail'];
+$email = CT_APITOOLS\CREDENTIALS['ctusername'];
 $password = CT_APITOOLS\CREDENTIALS['ctpassword'];
 
 $result = CT_loginAuth($ajax_domain, $email, $password);
-if (!$result) {
-    echo print_r($result, true);
-    die("CT login not successful:");
+
+if (!$result['status'] == 'success') {
+    var_dump($result);
+    die("Showcase aborted");
 }
+
+
 
 /**
  * execute showcases

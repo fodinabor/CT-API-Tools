@@ -9,12 +9,13 @@
  */
 
 $url = "$ctdomain/api/persons";
+$timestamp = date("h:i:sa");
 $data = ['page' => 1, 'limit' => 500];
 $data_json = <<< EOT
 {
   "vater": {
     "firstName": "zz_vater",
-    "lastName": "testfamilie",
+    "lastName": "test $timestamp",
     "departmentIds": [
       1
     ],
@@ -28,7 +29,7 @@ $data_json = <<< EOT
   },
   "mutter": {
     "firstName": "zz_mutter",
-    "lastName": "testfamilie",
+    "lastName": "test $timestamp",
     "departmentIds": [
       1
     ],
@@ -42,7 +43,7 @@ $data_json = <<< EOT
   },
   "kind1": {
     "firstName": "zz_kind-1",
-    "lastName": "testfamilie",
+    "lastName": "test $timestamp",
     "departmentIds": [
       1
     ],
@@ -57,7 +58,7 @@ $data_json = <<< EOT
 
   "kind2": {
     "firstName": "zz_kind-2",
-    "lastName": "testfamilie",
+    "lastName": "test $timestamp",
     "departmentIds": [
       1
     ],
@@ -94,7 +95,7 @@ $data = array(
     'child_id' => $result['mutter']['data']['id'],
     'rel_id' => "2"  // Ehepartner
 );
-$result['vater-mutter'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+$result['vater-mutter'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
 
 $data = array(
     'func' => 'add_rel',
@@ -102,7 +103,7 @@ $data = array(
     'child_id' => $result['kind1']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['vater-kind1'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+$result['vater-kind1'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
 
 $data = array(
     'func' => 'add_rel',
@@ -110,7 +111,7 @@ $data = array(
     'child_id' => $result['kind2']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['vater-kind2'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+$result['vater-kind2'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
 
 $data = array(
     'func' => 'add_rel',
@@ -118,7 +119,7 @@ $data = array(
     'child_id' => $result['kind1']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['mutter-kind1'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+$result['mutter-kind1'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
 
 
 $data = array(
@@ -127,7 +128,7 @@ $data = array(
     'child_id' => $result['kind2']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['muter-kind2'] = ['data'=> $data, 'result'=>CT_sendRequest($ajax_domain, $url, $data)];
+$result['muter-kind2'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
 
 
 $report['result'] = $result;
