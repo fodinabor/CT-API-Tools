@@ -34,4 +34,4 @@ $report = [
     'body' => json_decode($data_json),
 ];
 
-$report['response'] = CTV2_sendRequest($report['method'], $report['url'], $report['data'], $report['body'], true);
+$report['response'] = CT_APITOOLS\CTV2_sendRequest($report['method'], $report['url'], $report['data'], $report['body'], true);

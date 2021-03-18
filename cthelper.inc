@@ -28,6 +28,9 @@ SOFTWARE.
 https://api.church.tools/index.html
 */
 
+
+namespace CT_APITOOLS;
+
 /**
  * Extract key for cokie store etc.
  *

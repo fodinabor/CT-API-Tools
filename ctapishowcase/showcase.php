@@ -2,6 +2,7 @@
 
 /**
  */
+namespace CT_APITOOLS;
 
 require_once "../cthelper.inc";
 require_once('CT-credentialstore.php');
@@ -20,10 +21,10 @@ if (count($argv) == 2){
  * login
  */
 
-$ctdomain = CT_APITOOLS\CREDENTIALS['ctdomain'];
+$ctdomain = CREDENTIALS['ctdomain'];
 $ajax_domain = $ctdomain . "/?q=";
-$email = CT_APITOOLS\CREDENTIALS['ctusername'];
-$password = CT_APITOOLS\CREDENTIALS['ctpassword'];
+$email = CREDENTIALS['ctusername'];
+$password = CREDENTIALS['ctpassword'];
 
 $result = CT_loginAuth($ajax_domain, $email, $password);
 

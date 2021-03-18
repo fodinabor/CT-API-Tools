@@ -81,10 +81,10 @@ $report = [
 
 $result = [];
 
-$result['vater'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['vater']);
-$result['mutter'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['mutter']);
-$result['kind1'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['kind1']);
-$result['kind2'] = CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['kind2']);
+$result['vater'] = CT_APITOOLS\CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['vater']);
+$result['mutter'] = CT_APITOOLS\CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['mutter']);
+$result['kind1'] = CT_APITOOLS\CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['kind1']);
+$result['kind2'] = CT_APITOOLS\CTV2_sendRequest("POST", $report['url'], [], json_decode($data_json, true)['kind2']);
 
 
 $url = $ajax_domain . 'churchdb/ajax';
@@ -95,7 +95,7 @@ $data = array(
     'child_id' => $result['mutter']['data']['id'],
     'rel_id' => "2"  // Ehepartner
 );
-$result['vater-mutter'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
+$result['vater-mutter'] = ['data'=> $data, 'result'=>CT_APITOOLS\CTV1_sendRequest($ajax_domain, $url, $data)];
 
 $data = array(
     'func' => 'add_rel',
@@ -103,7 +103,7 @@ $data = array(
     'child_id' => $result['kind1']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['vater-kind1'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
+$result['vater-kind1'] = ['data'=> $data, 'result'=>CT_APITOOLS\CTV1_sendRequest($ajax_domain, $url, $data)];
 
 $data = array(
     'func' => 'add_rel',
@@ -111,7 +111,7 @@ $data = array(
     'child_id' => $result['kind2']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['vater-kind2'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
+$result['vater-kind2'] = ['data'=> $data, 'result'=>CT_APITOOLS\CTV1_sendRequest($ajax_domain, $url, $data)];
 
 $data = array(
     'func' => 'add_rel',
@@ -119,7 +119,7 @@ $data = array(
     'child_id' => $result['kind1']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['mutter-kind1'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
+$result['mutter-kind1'] = ['data'=> $data, 'result'=>CT_APITOOLS\CTV1_sendRequest($ajax_domain, $url, $data)];
 
 
 $data = array(
@@ -128,7 +128,7 @@ $data = array(
     'child_id' => $result['kind2']['data']['id'],
     'rel_id' => "1"  // kind
 );
-$result['muter-kind2'] = ['data'=> $data, 'result'=>CTV1_sendRequest($ajax_domain, $url, $data)];
+$result['muter-kind2'] = ['data'=> $data, 'result'=>CT_APITOOLS\CTV1_sendRequest($ajax_domain, $url, $data)];
 
 
 $report['result'] = $result;

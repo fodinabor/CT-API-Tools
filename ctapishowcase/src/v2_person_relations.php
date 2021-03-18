@@ -6,6 +6,6 @@ $report=[
     'url' => "$ctdomain/api/persons/90/relationships",
     'method' => 'GET'
 ];
-$report['response']= CTV2_sendRequest($report);
+$report['response']= CT_APITOOLS\CTV2_sendRequest($report);
 
 

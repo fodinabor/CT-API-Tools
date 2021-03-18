@@ -10,4 +10,4 @@ $report = [
 
 
 
-$report['response'] = CTV1_sendRequest($ajax_domain, $report['url'], $report['data']);
+$report['response'] = CT_APITOOLS\CTV1_sendRequest($ajax_domain, $report['url'], $report['data']);
