@@ -4,7 +4,7 @@
  */
 namespace CT_APITOOLS;
 
-require_once "../cthelper.inc";
+require_once "../ct_apitools--helper.inc.php";
 require_once('CT-credentialstore.php');
 
 /**
