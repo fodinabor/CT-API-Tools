@@ -4,21 +4,38 @@ I have pulled a fork to build it for my needs. There is not much in it yet, but 
 
 * Integration into other systems (Contao)
     * Namespaces or even wrapping into a class
-* Support of API V1 (ajax) as well as API V2 (REST)
+* [x] Support of API V1 (ajax) as well as API V2 (REST)
     * It is a bit a problem that domain already has the query in it
-* Playground to play around with the API
-* More documentation
-* Improve Handling of the credentials   
-* use https://github.com/guzzle/guzzle
+* [x] Playground to play around with the API
+* [x] More documentation
+* [x] Improve Handling of the credentials
 
 # CT-API-Tools
+
 PHP scripts, that make imports via the ChurchTools API or similar very easy.
 
-## cthelper.php
+## ct_apitools--helper.inc.php
+
+this holds the generic routines to interact with the CT api
+
+## ct_apitools.inc.php
+
 You need to do something special with the API of CT on your own?
 Have a look, maybe I've already discovered, how some part of the API works. You might find the fitting API call in this file!
 
+### ctapishowcase
+
+This folder holds the experiments @bwl21 did with CT-API.
+
+see [readme](ctapishowcase/readme.md) for details
+
+### more examples
+
+The following examples were take from the fodimator upstream.
+
 ## ctimportsongs.php
+
+**untested**
 
 Provides functionality to import a bunch of [OpenLyrics](https://openlyrics.org) xml song files automagically to ChurchTools.
 All you need to do is:
@@ -30,10 +47,14 @@ All you need to do is:
 
 ## ctinvtagstogroup.php
 
+**untested**
+
 A utility to remove tags from persons and instead add them to a group... only use if you know what you're doing.
 The tag and group ids have to be replaced in the file before using.
 
 ## calendarmerger.php
+
+**untested**
 
 You want to subscribe two ical sources, but only have limited calenders booked @CT?
 With the calendarmerger you can just host this file on a webserver, add your ical urls, you would like to subscribe to.
@@ -41,6 +62,8 @@ Now you can add the URL to the webserver you are hosting this on (e.g. `https://
 to ChurchTools as an iCal source and voilá: CT shows both calendars as one.
 
 ## ctgetallresourcebooking.php
+
+**untested**
 
 this generates the ressourcebookings of the day as html file - to be used for digital signeage.
 
