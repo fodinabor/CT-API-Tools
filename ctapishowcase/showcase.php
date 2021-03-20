@@ -26,7 +26,7 @@ $ajax_domain = $ctdomain . "/?q=";
 $email = CREDENTIALS['ctusername'];
 $password = CREDENTIALS['ctpassword'];
 
-$result = CT_loginAuth($ajax_domain, $email, $password);
+$result = CT_loginAuth($ctdomain, $email, $password);
 
 if (!$result['status'] == 'success') {
     var_dump($result);

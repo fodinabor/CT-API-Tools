@@ -310,7 +310,7 @@ function CT_login($domain, $token, $id)
  */
 function CT_loginAuth($domain, $email, $pw)
 {
-    $url = $domain . 'login/ajax';
+    $url = $domain . '/?q=login/ajax';
 
     // Now use creds to login
     $data = array(
@@ -328,7 +328,7 @@ function CT_loginAuth($domain, $email, $pw)
  */
 function CT_logout($domain)
 {
-    $url = $domain . 'login/ajax';
+    $url = $domain . '/?q=login/ajax';
 
     $data = array('func' => 'logout');
     $result = CTV1_sendRequest($domain, $url, $data);
@@ -344,7 +344,7 @@ function CT_getCTDbMasterData($domain)
     if (isset($CTDbMaster[$domain]) && $CTDbMaster[$domain] != null && $CTDbMaster[$domain]->status == "success") {
         return $CTDbMaster[$domain];
     }
-    $url = $domain . 'churchdb/ajax';
+    $url = $domain . '/?q=churchdb/ajax';
     $data = array('func' => 'getMasterData');
     $CTDbMaster[$domain] = CTV1_sendRequest($domain, $url, $data);
     return $CTDbMaster[$domain];
@@ -360,7 +360,7 @@ function CT_getCTAuthMasterData($domain)
     if (isset($CTAuthMaster[$domain]) && $CTAuthMaster[$domain] != null && $CTAuthMaster[$domain]->status == "success") {
         return $CTAuthMaster[$domain];
     }
-    $url = $domain . 'churchauth/ajax';
+    $url = $domain . '/?q=churchauth/ajax';
     $data = array('func' => 'getMasterData');
     $CTAuthMaster[$domain] = CTV1_sendRequest($domain, $url, $data);
     return $CTAuthMaster[$domain];
@@ -375,7 +375,7 @@ function CT_getCTAuthMasterData($domain)
  */
 function CT_createGroup($domain, $name, $groupTypeId, $groupStatus)
 {
-    $url = $domain . 'churchdb/ajax';
+    $url = $domain . '/?q=churchdb/ajax';
     $data = array(
         'func' => 'createGroup',
         'name' => $name,
@@ -395,7 +395,7 @@ function CT_createGroup($domain, $name, $groupTypeId, $groupStatus)
  */
 function CT_setParent($domain, $child, $parent)
 {
-    $url = $domain . 'churchdb/ajax';
+    $url = $domain . '/?q=churchdb/ajax';
     $data = array(
         'func' => 'addHierachy',
         'childId' => $child,
@@ -413,7 +413,7 @@ function CT_setParent($domain, $child, $parent)
  */
 function CT_addAuthStatus($domain, $id, $data)
 {
-    $url = $domain . 'churchauth/ajax';
+    $url = $domain . '/?q=churchauth/ajax';
 
     if (is_object($data)) {
         $data = CT_authToData($data);
@@ -437,7 +437,7 @@ function CT_addAuthStatus($domain, $id, $data)
  */
 function CT_addAuthGroupType($domain, $id, $data)
 {
-    $url = $domain . 'churchauth/ajax';
+    $url = $domain . '/?q=churchauth/ajax';
 
     if (is_object($data)) {
         $data = CT_authToData($data);
@@ -462,7 +462,7 @@ function CT_addAuthGroupType($domain, $id, $data)
  */
 function CT_addAuthGroup($domain, $id, $data)
 {
-    $url = $domain . 'churchauth/ajax';
+    $url = $domain . '/?q=churchauth/ajax';
 
     if (is_object($data)) {
         $data = CT_authToData($data);
@@ -504,7 +504,7 @@ function CT_authToData($auth)
  */
 function CT_getSongs($domain)
 {
-    $url = $domain . 'churchservice/ajax';
+    $url = $domain . '/?q=churchservice/ajax';
     $data = array('func' => 'getAllSongs');
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -517,7 +517,7 @@ function CT_getSongs($domain)
  */
 function CT_deleteSong($domain, $id)
 {
-    $url = $domain . 'churchservice/ajax';
+    $url = $domain . '/?q=churchservice/ajax';
     $data = array('func' => 'deleteSong', 'id' => $id);
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -534,7 +534,7 @@ function CT_deleteSong($domain, $id)
  */
 function CT_addSong($domain, $title, $author, $copy, $ccli)
 {
-    $url = $domain . 'churchservice/ajax';
+    $url = $domain . '/?q=churchservice/ajax';
     $data = array(
         'func' => 'addNewSong',
         'bezeichnung' => $title,
@@ -558,7 +558,7 @@ function CT_addSong($domain, $title, $author, $copy, $ccli)
  */
 function CT_deleteSongFile($domain, $id)
 {
-    $url = $domain . 'churchservice/ajax';
+    $url = $domain . '/?q=churchservice/ajax';
     $data = array('func' => 'delFile', 'id' => $id);
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -572,7 +572,7 @@ function CT_deleteSongFile($domain, $id)
  */
 function CT_addSongTag($domain, $id, $tagId)
 {
-    $url = $domain . 'churchservice/ajax';
+    $url = $domain . '/?q=churchservice/ajax';
     $data = array('func' => 'addSongTag', 'id' => $id, 'tag_id' => $tagId);
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -580,7 +580,7 @@ function CT_addSongTag($domain, $id, $tagId)
 
 function CT_deletePersonTag($domain, $id, $tag_id)
 {
-    $url = $domain . 'churchdb/ajax';
+    $url = $domain . '/?q=churchdb/ajax';
     $data = array('func' => 'delPersonTag', 'id' => $id, 'tag_id' => $tag_id);
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -592,7 +592,7 @@ function CT_deletePersonTag($domain, $id, $tag_id)
  */
 function CT_getAllPersonData($domain)
 {
-    $url = $domain . 'churchdb/ajax';
+    $url = $domain . '/?q=churchdb/ajax';
     $data = array('func' => 'getAllPersonData');
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -604,7 +604,7 @@ function CT_getAllPersonData($domain)
  */
 function CT_getRessourceBookings($domain)
 {
-    $url = $domain . 'churchresource/ajax';
+    $url = $domain . '/?q=churchresource/ajax';
     $data = array('func' => 'getBookings');
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -620,7 +620,7 @@ function CT_getRessourceBookings($domain)
  */
 function CT_addPersonGroupRelation($domain, $id, $g_id, $memberstatus_id, $comment = "")
 {
-    $url = $domain . 'churchdb/ajax';
+    $url = $domain . '/?q=churchdb/ajax';
     $data = array(
         'func' => 'addPersonGroupRelation',
         'id' => $id,
@@ -640,7 +640,7 @@ function CT_addPersonGroupRelation($domain, $id, $g_id, $memberstatus_id, $comme
  */
 function CT_getPersonDetails($domain, $id)
 {
-    $url = $domain . 'churchdb/ajax';
+    $url = $domain . '/?q=churchdb/ajax';
     $data = array('func' => 'getPersonDetails', 'id' => $id);
     $ret = CTV1_sendRequest($domain, $url, $data);
     return $ret;
@@ -704,7 +704,7 @@ function CT_addTextToSong($domain, $song_id, $filepath)
     if (!file_exists($filepath)) {
         return FALSE;
     }
-    $url = $domain . "churchservice/uploadfile";
+    $url = $domain . "/?q=churchservice/uploadfile";
 
     $fields = array("domain_type" => "song_arrangement", "domain_id" => $song_id);
     $filename = basename($filepath);
