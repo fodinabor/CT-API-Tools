@@ -299,6 +299,18 @@ function CTV2_sendRequest($method, $url = null, $query = null, $body = null)
         $_url = $method['url'];
         $_data = array_key_exists('data', $method) ? $method['data'] : null;
         $_body = array_key_exists('body', $method) ? $method['body'] : null;
+
+        if (isset($url) or isset($query) or isset($body)) {
+            return [
+                'status' => 'fail',
+                'message' => "fist parameter of CTV2_sendReauest is array but other parameters given",
+                'request' => [
+                    'url' => $_url,
+                    'data' => $query,
+                    'body' => $body
+                ]
+            ];
+        }
     } else {
         $_method = $method;
         $_url = $url;
@@ -310,6 +322,8 @@ function CTV2_sendRequest($method, $url = null, $query = null, $body = null)
         $_url = $_url . "?" . http_build_query($_data);
     }
 
+    // todo verify parameters
+
     $options = array(
         'http' => array(
             'header' => "Cookie: " . _getCookies($_url)
@@ -320,6 +334,7 @@ function CTV2_sendRequest($method, $url = null, $query = null, $body = null)
             'ignore_errors' => true,
         )
     );
+
     $context = stream_context_create($options);
     $result = file_get_contents($_url, false, $context);
     $obj = json_decode($result, true);
@@ -342,68 +357,121 @@ function CTV2_sendRequest($method, $url = null, $query = null, $body = null)
 
 /**
  *
- * login to Churchtools using an access token
+ * perform a paginated CTV2 request. Pagination is controlled with data fields:
  *
- * note that the login is valid as long as the script runs. The session is
- * not preserverd oveer multiple invocations (as the cookies are not saved)
+ * 'page'    = the first page tobe retrieved
+ * 'limit    = the amount of results per page
  *
- * @param $domain
- * @param $token
- * @param $id
- * @return bool
+ * optional:
+ * 'lastpage = the last page to be retrieved. Without this page all remaining pages are retrieved
+ *
+ * @param array $report an array like this:
+ *
+ * ```php
+ * $report = [
+ *   'method' => 'GET',
+ *   'url' => "$ctdomain/api/persons",
+ *   'data' => [
+ *      'page' => 1,
+ *      'limit' => 50,
+ *      'lastpage' => 10
+ *     ]
+ * ];
+ * ```
  */
-function CT_login($domain, $token, $id)
+function CTV2_sendRequestWithPagination(array $report)
 {
-    $url = $domain . 'login/ajax';
+    $resultdata = [];
+    $response = [];
 
-    // Now use token to login
-    $data = array(
-        'func' => 'loginWithToken',
-        'token' => $token,
-        'id' => $id,
-        'directtool' => 'API Tools'
-    );
-    $result = CTV1_sendRequest($domain, $url, $data, false);
-    return $result;
+    if (array_key_exists('lastpage', $report['data'])) {
+        $lastpage = min($report['data']['lastpage'], $report['data']['page']);
+        $requestedlastpage = $lastpage;
+    }
+    else{
+        $lastpage = $report['data']['page'];
+        $requestedlastpage = 1000000;
+    }
+
+    while ($lastpage >= $report['data']['page']) {
+
+        // echo "\nreading {$report['data']['page']} of $lastpage";
+        $response = CTV2_sendRequest($report);
+
+        $resultdata = array_merge($resultdata, $response['data']);
+        // obey 'lastpage' in request
+        $lastpage = min($response['meta']['pagination']['lastPage'], $requestedlastpage);
+        $report['data']['page'] = $response['meta']['pagination']['current'] + 1;
+    }
+
+    $response['data'] = $resultdata;
+    return $response;
 }
 
+    /**
+     *
+     * login to Churchtools using an access token
+     *
+     * note that the login is valid as long as the script runs. The session is
+     * not preserverd oveer multiple invocations (as the cookies are not saved)
+     *
+     * @param $domain
+     * @param $token
+     * @param $id
+     * @return bool
+     */
+    function CT_login($domain, $token, $id)
+    {
+        $url = $domain . 'login/ajax';
 
-/**
- *
- * login to Churchtools using credentials
- *
- * note that the login is valid as long as the script runs. The session is
- * not preserverd oveer multiple invocations (as the cookies are not saved)
- *
- * @param $domain
- * @param $email    username or email
- * @param $pw       password
- * @return Array 'status' => 'success'| 'fail'
- */
-function CT_loginAuth($domain, $email, $pw)
-{
-    $url = $domain . '/?q=login/ajax';
+        // Now use token to login
+        $data = array(
+            'func' => 'loginWithToken',
+            'token' => $token,
+            'id' => $id,
+            'directtool' => 'API Tools'
+        );
+        $result = CTV1_sendRequest($domain, $url, $data, false);
+        return $result;
+    }
 
-    // Now use creds to login
-    $data = array(
-        'func' => 'login',
-        'email' => $email,
-        'password' => $pw,
-        'directtool' => 'API Tools'
-    );
-    $result = CTV1_sendRequest($domain, $url, $data, false);
-    return ($result);
-}
 
-/**
- * terminate the current sessio
- *
- * @param $domain
- */
-function CT_logout($domain)
-{
-    $url = $domain . '/?q=login/ajax';
+    /**
+     *
+     * login to Churchtools using credentials
+     *
+     * note that the login is valid as long as the script runs. The session is
+     * not preserverd oveer multiple invocations (as the cookies are not saved)
+     *
+     * @param $domain
+     * @param $email    username or email
+     * @param $pw       password
+     * @return Array 'status' => 'success'| 'fail'
+     */
+    function CT_loginAuth($domain, $email, $pw)
+    {
+        $url = $domain . '/?q=login/ajax';
 
-    $data = array('func' => 'logout');
-    $result = CTV1_sendRequest($domain, $url, $data);
-}
+        // Now use creds to login
+        $data = array(
+            'func' => 'login',
+            'email' => $email,
+            'password' => $pw,
+            'directtool' => 'API Tools'
+        );
+        $result = CTV1_sendRequest($domain, $url, $data, false);
+        return ($result);
+    }
+
+    /**
+     * terminate the current sessio
+     *
+     * @param $domain
+     */
+    function CT_logout($domain)
+    {
+        $url = $domain . '/?q=login/ajax';
+
+        $data = array('func' => 'logout');
+        $result = CTV1_sendRequest($domain, $url, $data);
+    }
