@@ -39,7 +39,7 @@ namespace CT_APITOOLS;
  *
  * for internal use
  */
-function getCoreDomain($domain)
+function _getCoreDomain($domain)
 {
     $pos = strpos($domain, "://");
     if ($pos !== false) {
@@ -65,7 +65,7 @@ function getCoreDomain($domain)
  *
  * for internal use
  */
-function &getCookies()
+function &_getCookiesArray()
 {
     static $CT_cookies = array();
     return $CT_cookies;
@@ -79,10 +79,10 @@ function &getCookies()
  * @param $domain the url as to be specified in the api calls e.g. https://mychurch.church.tools/?q=api/ajax
  * @return string the cookie string
  */
-function CT_getCookies($domain)
+function _getCookies($domain)
 {
-    $domain = getCoreDomain($domain);
-    $CT_cookies = &getCookies();
+    $domain = _getCoreDomain($domain);
+    $CT_cookies = &_getCookiesArray();
     if (!isset($CT_cookies[$domain])) {
         $CT_cookies[$domain] = array();
     }
@@ -102,10 +102,10 @@ function CT_getCookies($domain)
  *
  * for internal use
  */
-function CT_saveCookies($domain, $r)
+function _saveCookies($domain, $r)
 {
-    $domain = getCoreDomain($domain);
-    $CT_cookies = &getCookies();
+    $domain = _getCoreDomain($domain);
+    $CT_cookies = &_getCookiesArray();
     foreach ($r as $hdr) {
         if (preg_match('/^Set-Cookie:\s*([^;]+)/i', $hdr, $matches)) {
             parse_str($matches[1], $tmp);
@@ -122,18 +122,19 @@ function CT_saveCookies($domain, $r)
  *
  * for internal use
  */
-function CT_getCSRFToken($url)
+function _getCSRFToken($url)
 {
     static $token = array();
 
-    $domain = getCoreDomain($url);
+    $domain = _getCoreDomain($url);
 
     if (isset($token[$domain]) && !empty($token[$domain])) {
         return $token[$domain];
+
     }
 
-    $result = CTNew_getRequest("https://$domain/api/csrftoken", array());
-    $token[$domain] = $result->data;
+    $result = CTV2_sendRequest("GET", "https://$domain/api/csrftoken", array(), array());
+    $token[$domain] = $result['data'];
     return $token[$domain];
 }
 
@@ -152,7 +153,7 @@ function CT_sendRequestMultipart($domain, $url, $content, $delimiter)
 {
     $options = array(
         'http' => array(
-            'header' => "Cookie: " . CT_getCookies($domain) . "\r\nContent-Type: multipart/form-data; boundary=" . $delimiter . "\r\nContent-Length: " . strlen($content) . "\r\n",
+            'header' => "Cookie: " . _getCookies($domain) . "\r\nContent-Type: multipart/form-data; boundary=" . $delimiter . "\r\nContent-Length: " . strlen($content) . "\r\n",
             'method' => 'POST',
             'content' => $content
         )
@@ -163,7 +164,7 @@ function CT_sendRequestMultipart($domain, $url, $content, $delimiter)
     if (isset($obj->status) && $obj->status == 'error') {
         echo "There is an error: $obj->message";
     }
-    CT_saveCookies($domain, $http_response_header);
+    _saveCookies($domain, $http_response_header);
     return $obj;
 }
 
@@ -182,9 +183,9 @@ function CT_sendRequestMultipart($domain, $url, $content, $delimiter)
  */
 function CTV1_sendRequest($domain, $url, $data, $csrf_token_required = true)
 {
-    $header = "Cookie: " . CT_getCookies($domain) . "\r\nContent-type: application/x-www-form-urlencoded\r\n";
+    $header = "Cookie: " . _getCookies($domain) . "\r\nContent-type: application/x-www-form-urlencoded\r\n";
     if ($csrf_token_required) {
-        $header .= "csrf-token: " . CT_getCSRFToken($domain) . "\r\n";
+        $header .= "csrf-token: " . _getCSRFToken($domain) . "\r\n";
     }
 
     $options = array(
@@ -209,7 +210,7 @@ function CTV1_sendRequest($domain, $url, $data, $csrf_token_required = true)
         ]
         ];
     }
-    CT_saveCookies($domain, $http_response_header);
+    _saveCookies($domain, $http_response_header);
     return $obj;
 }
 
@@ -251,7 +252,7 @@ function CTV2_sendRequest($method, $url = null, $query = null, $body = null)
 
     $options = array(
         'http' => array(
-            'header' => "Cookie: " . CT_getCookies($_url)
+            'header' => "Cookie: " . _getCookies($_url)
                 . "\r\nContent-type: application/json"
                 . "\r\naccept: application/json",
             'method' => $_method,
@@ -275,41 +276,9 @@ function CTV2_sendRequest($method, $url = null, $query = null, $body = null)
             ]
         ];
     }
-    CT_saveCookies($_url, $http_response_header);
+    _saveCookies($_url, $http_response_header);
     return $obj;
 }
-
-
-/**
- * @param $url
- * @param $data
- * @return mixed
- */
-function CTNew_getRequest($url, $data)
-{
-    $options = array(
-        'http' => array(
-            'header' => "Cookie: " . CT_getCookies($url) . "\r\nContent-type: application/x-www-form-urlencoded\r\n",
-            'method' => 'GET',
-            'content' => http_build_query($data),
-            'ignore_errors' => true
-        )
-    );
-    $finalurl = $url . "?" . http_build_query($data);
-    $context = stream_context_create($options);
-    $result = file_get_contents($finalurl, false, $context);
-    $obj = json_decode($result);
-    if (!isset($obj)) {
-        echo("could noth handle result");
-        var_dump($http_response_header);
-        var_dump($url);
-        var_dump($result);
-        echo("end could noth handle result");
-    }
-    CT_saveCookies($url, $http_response_header);
-    return $obj;
-}
-
 
 /**
  * @param $domain
@@ -686,7 +655,7 @@ function CTNew_getEventAgenda($domain, $id)
 {
     $url = $domain . '/api/events/' . $id . '/agenda';
     $data = array();
-    $ret = CTNew_getRequest($url, $data);
+    $ret = CTV2_sendRequest( "GET", $url, $data, []);
     return $ret;
 }
 
@@ -697,7 +666,7 @@ function CTNew_getEventAgenda($domain, $id)
  * @param $file_content
  * @return string
  */
-function build_data_files($boundary, $fields, $filename, $file_content)
+function _build_data_files($boundary, $fields, $filename, $file_content)
 {
     $data = '';
     $eol = "\r\n";
@@ -744,7 +713,7 @@ function CT_addTextToSong($domain, $song_id, $filepath)
     $boundary = uniqid();
     $delimiter = '-------------' . $boundary;
 
-    $post_data = build_data_files($boundary, $fields, $filename, $file_content);
+    $post_data = _build_data_files($boundary, $fields, $filename, $file_content);
 
     $ret = CT_sendRequestMultipart($domain, $url, $post_data, $delimiter);
     return $ret;
