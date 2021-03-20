@@ -2,10 +2,13 @@
 
 I have pulled a fork to build it for my needs. There is not much in it yet, but it will come.
 
-* Integration into other systems (Contao)
-    * Namespaces or even wrapping into a class
+
+* [x] Namespaces for Integration into other systems (Contao)
 * [x] Support of API V1 (ajax) as well as API V2 (REST)
-    * It is a bit a problem that domain already has the query in it
+    * Breaking change: It is a bit a problem that 'domain' already has the query in it.
+      So I moved this into CTV1_sendRequest
+    * provide two reequest Methods CTV1_SendRequest and CTV2_SendRequest
+    * provide pagination CTV2_sendRequestWithPagination   
 * [x] Playground to play around with the API
 * [x] More documentation
 * [x] Improve Handling of the credentials
