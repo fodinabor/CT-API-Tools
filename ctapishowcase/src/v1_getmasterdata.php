@@ -2,7 +2,7 @@
 
 
 $report = [
-    'url' => $ajax_domain . 'churchdb/ajax' ,
+    'url' => $ctdomain . '/?q=churchdb/ajax' ,
     'method' => "POST",
     'data' => ['func'=>'getMasterData'],
     'response' => "???"
@@ -10,4 +10,4 @@ $report = [
 
 
 
-$report['response'] = CT_APITOOLS\CTV1_sendRequest($ajax_domain, $report['url'], $report['data']);
+$report['response'] = CT_APITOOLS\CTV1_sendRequest($ctdomain, $report['url'], $report['data']);
