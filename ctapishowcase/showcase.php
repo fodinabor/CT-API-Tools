@@ -2,7 +2,9 @@
 
 /**
  */
+
 namespace CT_APITOOLS;
+require 'vendor/autoload.php';
 
 require_once "../ct_apitools--helper.inc.php";
 require_once('CT-credentialstore.php');

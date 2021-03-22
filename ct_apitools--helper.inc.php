@@ -184,10 +184,10 @@ function _getCSRFToken($url)
 
     if (isset($token[$domain]) && !empty($token[$domain])) {
         return $token[$domain];
-
     }
 
     $result = CTV2_sendRequest("GET", "https://$domain/api/csrftoken", array(), array());
+    // toto handle failure
     $token[$domain] = $result['data'];
     return $token[$domain];
 }
