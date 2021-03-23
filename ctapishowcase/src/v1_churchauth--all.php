@@ -18,19 +18,22 @@ function resolve_auth_entry($auth_entry, JSONPath $masterdata_jsonpath, $datafie
 
         $lookuptable = isset($datafield) ? $datafield : "auth_table";
 
-        if ($_auth_key == -1){
-           $__modulename = "alle";
-        }
-        else {
+        if ($_auth_key == -1) {
+            $__modulename = "alle";
+        } else {
             $__authrecord = $masterdata_jsonpath->find("$..{$lookuptable}..[?(@.id=='$_auth_key')]")->getData()[0];
-            $__authname = key_exists("auth", $__authrecord ) ? " [{$__authrecord['auth']}]" : "";
-            $__modulename = "{$__authrecord['bezeichnung']}{$__authname}";
+            if (isset($__authrecord)) {
+                $__authname = key_exists("auth", $__authrecord) ? " [{$__authrecord['auth']}]" : "";
+                $__modulename = "{$__authrecord['bezeichnung']}{$__authname}";
+            } else {
+                $__modulename = "?? undefined in $lookuptable ??";
+            }
         }
 
-        $_authvalue_resolved = is_array($_authvalue) ? resolve_auth_entry($_authvalue, $masterdata_jsonpath,
-            $__authrecord['datenfeld']) : null;
+        $_authvalue_resolved = is_array($_authvalue) ?
+            resolve_auth_entry($_authvalue, $masterdata_jsonpath, $__authrecord['datenfeld']) : $_auth_key;
 
-        return ["{$__modulename} (id: $_auth_key)", $_authvalue_resolved];
+        return ["{$__modulename} (id: $_auth_key)"=> $_authvalue_resolved];
     },
         array_keys($auth_entry));
 }
@@ -51,6 +54,16 @@ $report = [
 $masterdata = CT_APITOOLS\CTV1_sendRequest($ctdomain, $report['url'], $report['data']);
 $masterdata_jsonpath = new JSONPath($masterdata);
 
+$authdefinitions = [];  // here we collect auth definietions
+
+function pushauthdef ($hash, $role, $definition, &$authdefinitions){
+    if (key_exists($hash, $authdefinitions)) {
+        $authdefinitions[$hash]['applied'][] = $role;
+    } else {
+        $authdefinitions[$hash] = ['applied' => [$role]];
+    }
+}
+
 // handle status
 
 $statuus = $masterdata_jsonpath->find('$..churchauth.status.*')->getData();
@@ -60,7 +73,17 @@ foreach ($statuus as $status) {
     $statusid = $status['id'];
     $statusname = $status['bezeichnung'];
 
-    $statusauth[$statusname]['auth'] = resolve_auth_entry($status['auth'], $masterdata_jsonpath);
+    $auth= resolve_auth_entry($status['auth'], $masterdata_jsonpath);
+
+    $hash = hash('md5', json_encode($auth));
+    pushauthdef($hash, "status: $statusname", $auth, $authdefinitions);
+
+    $result = [
+        "auth_hash" => $hash,
+        'auth' => $auth
+    ];
+
+    $statusauth[$statusname] = $result;
 }
 
 
@@ -77,7 +100,7 @@ foreach ($grouptypes as $grouptype) {
     // get membertype
     $q = "$..grouptypeMemberstatus[?(@.gruppentyp_id == '$grouptypeid')]";
     $membertypes = $masterdata_jsonpath->find($q)->getData();
-    $r = array_map(function ($auth_entry) use ($grouptypename, $masterdata_jsonpath) {
+    $r = array_map(function ($auth_entry) use ($grouptypename, $masterdata_jsonpath, &$authdefinitions) {
 
         if (isset($auth_entry['auth'])) {
             $auth = resolve_auth_entry($auth_entry['auth'], $masterdata_jsonpath);
@@ -85,10 +108,14 @@ foreach ($grouptypes as $grouptype) {
             $auth = [];
         }
 
+        $hash = hash('md5', json_encode($auth));
+
+        pushauthdef($hash, "Gruppentyp: $grouptypename {$auth_entry['bezeichnung']}", $auth, $authdefinitions);
+
         return [
             'grouptype' => $grouptypename,
             'membertype' => $auth_entry['bezeichnung'],
-            "auth_hash" => hash('md5', json_encode($auth)),
+            "auth_hash" => $hash,
             'auth' => $auth
         ];
     }, $membertypes);
@@ -103,7 +130,6 @@ $groups = $masterdata_jsonpath->find('$..groups.*')->getData();
 $groupmemberauth = $masterdata_jsonpath->find('$..groupMemberstatus[?(@.auth)]')->getData();;
 
 $groupmissing = [];
-$authdefinitions = [];
 $groupauth = [];
 
 foreach ($groupmemberauth as &$i) {
@@ -124,14 +150,10 @@ foreach ($groupmemberauth as &$i) {
     }
 
 
-    $role = "{$j['group_id']} {$j['group']} ({$j['role']})}";
-    if (key_exists($hash, $authdefinitions)) {
-        $authdefinitions[$hash]['applied'][] = $role;
-    } else {
-        $authdefinitions[$hash] = ['applied' => [$role], 'auth' => $i['auth']];
-    }
+    $role = "Gruppe: {$j['group_id']} {$j['group']} ({$j['role']})}";
 
     $i = $j;
+    pushauthdef($hash, $role, $i['auth'], $authdefinitions);
 
     $groupauth[$j['group']][$j['role']] = $j;
 }
