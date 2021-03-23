@@ -8,14 +8,29 @@ use Flow\JSONPath\JSONPath;
  * @return string[]
  * @throws \Flow\JSONPath\JSONPathException
  */
-function resolve_auth_entry($auth_entry, JSONPath $masterdata_jsonpath)
+function resolve_auth_entry($auth_entry, JSONPath $masterdata_jsonpath, $datafield = null)
 {
-    return array_map(function ($_auth_key) use ($masterdata_jsonpath) {
+    return array_map(function ($_auth_key) use ($masterdata_jsonpath, $auth_entry, $datafield) {
+        $_authvalue = $auth_entry[$_auth_key];
         // todo fix handling of missing targets and auth parameters.
         // todo fix handling of auth for subgroups
         // todo fix handling of auth parameters
-        $__authrecord = $masterdata_jsonpath->find("$..auth_table..[?(@.id=='$_auth_key')]")[0];
-        return "{$__authrecord['modulename']} {$__authrecord['auth']} (id: $_auth_key)";
+
+        $lookuptable = isset($datafield) ? $datafield : "auth_table";
+
+        if ($_auth_key == -1){
+           $__modulename = "alle";
+        }
+        else {
+            $__authrecord = $masterdata_jsonpath->find("$..{$lookuptable}..[?(@.id=='$_auth_key')]")->getData()[0];
+            $__authname = key_exists("auth", $__authrecord ) ? " [{$__authrecord['auth']}]" : "";
+            $__modulename = "{$__authrecord['bezeichnung']}{$__authname}";
+        }
+
+        $_authvalue_resolved = is_array($_authvalue) ? resolve_auth_entry($_authvalue, $masterdata_jsonpath,
+            $__authrecord['datenfeld']) : null;
+
+        return ["{$__modulename} (id: $_auth_key)", $_authvalue_resolved];
     },
         array_keys($auth_entry));
 }
@@ -45,9 +60,7 @@ foreach ($statuus as $status) {
     $statusid = $status['id'];
     $statusname = $status['bezeichnung'];
 
-    // get membertype
-
-    $statusauth[$statusname]['authx'] = resolve_auth_entry($status['auth'], $masterdata_jsonpath);
+    $statusauth[$statusname]['auth'] = resolve_auth_entry($status['auth'], $masterdata_jsonpath);
 }
 
 
