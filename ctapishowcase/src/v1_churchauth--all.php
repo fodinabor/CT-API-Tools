@@ -21,7 +21,7 @@ function resolve_auth_entry($auth_entry, JSONPath $masterdata_jsonpath, $datafie
         if ($_auth_key == -1) {
             $__modulename = "alle";
         } else {
-            $__authrecord = $masterdata_jsonpath->find("$..{$lookuptable}..[?(@.id=='$_auth_key')]")->getData()[0];
+            $__authrecord = $masterdata_jsonpath->find("$..{$lookuptable}..[?(@.id= ='$_auth_key')]")->getData()[0];
             if (isset($__authrecord)) {
                 $__authname = key_exists("auth", $__authrecord) ? " [{$__authrecord['auth']}]" : "";
                 $__modulename = "{$__authrecord['bezeichnung']}{$__authname}";
@@ -58,9 +58,10 @@ $authdefinitions = [];  // here we collect auth definietions
 
 function pushauthdef ($hash, $role, $definition, &$authdefinitions){
     if (key_exists($hash, $authdefinitions)) {
-        $authdefinitions[$hash]['applied'][] = $role;
+        $authdefinitions[$hash][] = $role;
     } else {
-        $authdefinitions[$hash] = ['applied' => [$role]];
+       // $authdefinitions[$hash] = ['applied' => [$role], 'auth' => $definition];
+        $authdefinitions[$hash] = [$role];
     }
 }
 

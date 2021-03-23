@@ -54,7 +54,7 @@ foreach ($showcases as $showcase) {
     $outfilebase = basename($showcase, ".php");
 
     $myfile = fopen("responses/$outfilebase.json", "w") or die("Unable to open file!");
-    fwrite($myfile, json_encode($report, JSON_PRETTY_PRINT));
+    fwrite($myfile, json_encode($report, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
     fclose($myfile);
 }
 /**
