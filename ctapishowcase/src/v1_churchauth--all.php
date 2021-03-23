@@ -13,8 +13,9 @@ function resolve_auth_entry($auth_entry, JSONPath $masterdata_jsonpath)
     return array_map(function ($_auth_key) use ($masterdata_jsonpath) {
         // todo fix handling of missing targets and auth parameters.
         // todo fix handling of auth for subgroups
+        // todo fix handling of auth parameters
         $__authrecord = $masterdata_jsonpath->find("$..auth_table..[?(@.id=='$_auth_key')]")[0];
-        return "{$__authrecord['auth']} (id: $_auth_key)";
+        return "{$__authrecord['modulename']} {$__authrecord['auth']} (id: $_auth_key)";
     },
         array_keys($auth_entry));
 }
@@ -46,14 +47,7 @@ foreach ($statuus as $status) {
 
     // get membertype
 
-    foreach(array_keys($status['auth']) as $key){
-        $newkey = "key: $key";
-            $x = $masterdata_jsonpath->find("$..auth_table.*[?(@.id==$key)].auth")->getData()[0];
-            //todo auth-record weiter ausbauen
-            //z.b. in cc_calcategory schauen
-        $statusauth[$statusname][$x] = $status['auth'][$key];
-            //resolve_auth_entry( $status['auth'][$key], $masterdata_jsonpath);
-    }
+    $statusauth[$statusname]['authx'] = resolve_auth_entry($status['auth'], $masterdata_jsonpath);
 }
 
 
@@ -72,10 +66,9 @@ foreach ($grouptypes as $grouptype) {
     $membertypes = $masterdata_jsonpath->find($q)->getData();
     $r = array_map(function ($auth_entry) use ($grouptypename, $masterdata_jsonpath) {
 
-        if (isset($auth_entry['auth'])){
-            $auth = resolve_auth_entry( $auth_entry['auth'], $masterdata_jsonpath);
-        }
-        else{
+        if (isset($auth_entry['auth'])) {
+            $auth = resolve_auth_entry($auth_entry['auth'], $masterdata_jsonpath);
+        } else {
             $auth = [];
         }
 
@@ -109,7 +102,7 @@ foreach ($groupmemberauth as &$i) {
         'group_id' => $i['group_id'],
         'groupMemberstatus_id' => $i['id'],
         'auth_hash' => $hash,
-        'auth' => resolve_auth_entry( $i['auth'], $masterdata_jsonpath)
+        'auth' => resolve_auth_entry($i['auth'], $masterdata_jsonpath)
     ];
 
 
