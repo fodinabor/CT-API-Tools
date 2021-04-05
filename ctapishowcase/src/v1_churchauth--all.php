@@ -15,7 +15,7 @@
 
 // helpers for JSONPath
 
-use Flow\JSONPath\JSONPath;
+use JsonPath\JsonObject;
 
 /**
  * find a set in a JSONPath
@@ -26,7 +26,8 @@ use Flow\JSONPath\JSONPath;
  */
 function find_in_JSONPath(&$masterdata, $jsonpath)
 {
-    return ($masterdata->find($jsonpath)->getData());
+    $result = $masterdata->get($jsonpath);
+    return $result;
 }
 
 /**
@@ -44,6 +45,7 @@ function find_one_in_JSONPath(&$masterdata, $jsonpath)
     return ($result);
 }
 
+
 // helpers for CT autho
 
 /**
@@ -55,7 +57,7 @@ function find_one_in_JSONPath(&$masterdata, $jsonpath)
  * @return string[]  athe result of the evaluation
  * @throws \Flow\JSONPath\JSONPathException
  */
-function resolve_auth_entry($auth_entry, JSONPath $masterdata_jsonpath, $datafield = null)
+function resolve_auth_entry($auth_entry, JsonObject $masterdata_jsonpath, $datafield = null)
 {
     if (!isset($auth_entry)) {
         return null;
@@ -66,26 +68,46 @@ function resolve_auth_entry($auth_entry, JSONPath $masterdata_jsonpath, $datafie
         // todo fix handling of auth for subgroups
         // todo fix handling of auth parameters
 
-        // find in which table to resolv the authkey
+        // find in which table to resolve the authkey
         // by default it is auth_table
+        // note that "auth_table" uses integer ids
+        // churchauth uses string ids
         $lookuptable = isset($datafield) ? $datafield : "auth_table";
 
         // auth_key = -1 resolves to all (groups etc.)
         if ($_auth_key == -1) {
             $__modulename = "alle";
         } else {
-            $__authrecord = find_one_in_JSONPath($masterdata_jsonpath, "$..{$lookuptable}..[?(@.id=='$_auth_key')]");
+            // workaround the type-mess of ids in CT
+            $__auth_key = $_auth_key;
+            // if we have subgroup stuff such as "10001D" - lookup fore 10001
+            if ((substr($__auth_key, -1) == 'D')) {
+                $__auth_key = (int)$_auth_key;
+            }
+
+            // there are sill some id which are strings
+            if ($lookuptable == 'auth_table') {
+                $__auth_key = $__auth_key;
+            }
+            else{
+                $__auth_key = "'$__auth_key'";
+            }
+
+            $path = "$..{$lookuptable}..*[?(@.id == $__auth_key )]";
+
+            $__authrecord = find_one_in_JSONPath($masterdata_jsonpath, $path);
             if (isset($__authrecord)) {
                 $__authname = key_exists("auth", $__authrecord) ? " [{$__authrecord['auth']}]" : "";
                 $__modulename = "{$__authrecord['bezeichnung']}{$__authname}";
             } else {
+                var_dump($path, $__authrecord, $_auth_key,  $lookuptable);
                 $__modulename = "$_auth_key undefined in $lookuptable ??";
             }
         }
 
-        // if resolved value is a nested auth record, we have to resolved this again.
-        // this means we have an auth entry with parameters.
-        // otherwise wer return the key as dummy parameter.
+// if resolved value is a nested auth record, we have to resolved this again.
+// this means we have an auth entry with parameters.
+// otherwise wer return the key as dummy parameter.
         $_authvalue_resolved = is_array($_authvalue) ?
             resolve_auth_entry($_authvalue, $masterdata_jsonpath, $__authrecord['datenfeld']) : $_auth_key;
 
@@ -124,7 +146,7 @@ function pushauthdef($hash, $role, $definition, &$authdefinitions)
  * @return array
  * @throws \Flow\JSONPath\JSONPathException
  */
-function read_auth_by_status(JSONPath $masterdata_jsonpath, array &$authdefinitions)
+function read_auth_by_status(JsonObject $masterdata_jsonpath, array &$authdefinitions)
 {
     $statuus = find_in_JSONPath($masterdata_jsonpath, '$..churchauth.status.*');
     $statusauth = [];  // here we collect the groptype auths
@@ -159,7 +181,7 @@ function read_auth_by_status(JSONPath $masterdata_jsonpath, array &$authdefiniti
  * @return array
  * @throws \Flow\JSONPath\JSONPathException
  */
-function read_auth_by_grouptypes(JSONPath $masterdata_jsonpath, &$authdefinitions)
+function read_auth_by_grouptypes(JsonObject $masterdata_jsonpath, &$authdefinitions)
 {
     $grouptypes = find_in_JSONPath($masterdata_jsonpath, '$..cdb_gruppentyp.*');
 
@@ -210,7 +232,7 @@ function read_auth_by_grouptypes(JSONPath $masterdata_jsonpath, &$authdefinition
  * @return array
  * @throws \Flow\JSONPath\JSONPathException
  */
-function read_auth_by_groups(JSONPath $masterdata_jsonpath, &$authdefinitions)
+function read_auth_by_groups(JsonObject $masterdata_jsonpath, &$authdefinitions)
 {
     //$groups = find_in_JSONPath($masterdata_jsonpath,'$..groups.*');
 
@@ -225,7 +247,7 @@ function read_auth_by_groups(JSONPath $masterdata_jsonpath, &$authdefinitions)
         $resolved_authentry = [
             'group' => find_one_in_JSONPath($masterdata_jsonpath, "$..group.{$authentry['group_id']}.bezeichnung"),
             'role' => find_one_in_JSONPath($masterdata_jsonpath,
-                "$..grouptypeMemberstatus.[?(@.id=={$authentry['grouptype_memberstatus_id']})].bezeichnung"),
+                "$..grouptypeMemberstatus[?(@.id == '{$authentry['grouptype_memberstatus_id']}')].bezeichnung"),
             'group_id' => $authentry['group_id'],
             'groupMemberstatus_id' => $authentry['id'],
             'auth_hash' => $hash,
@@ -263,7 +285,7 @@ $report = [
 ];
 
 $masterdata = CT_APITOOLS\CTV1_sendRequest($ctdomain, $report['url'], $report['data']);
-$masterdata_jsonpath = new JSONPath($masterdata);
+$masterdata_jsonpath = new JsonObject($masterdata,);
 $authdefinitions = [];  // here we collect auth definietions
 
 // reading auth by status
