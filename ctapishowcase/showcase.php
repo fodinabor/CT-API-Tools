@@ -12,7 +12,7 @@ require_once('CT-credentialstore.php');
 /**
  * find the showcases to be processed
  */
-if (count($argv) == 2){
+if (count($argv) > 1 ){
     $showcases = glob("src/*{$argv[1]}*.php");
 } else {
     $showcases = glob("src/*.php");

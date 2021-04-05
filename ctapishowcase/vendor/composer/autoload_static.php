@@ -20,11 +20,29 @@ class ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7
         ),
     );
 
+    public static $prefixesPsr0 = array (
+        'U' => 
+        array (
+            'Utilities\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/galbar/jsonpath/src/Galbar',
+            ),
+        ),
+        'J' => 
+        array (
+            'JsonPath\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/galbar/jsonpath/src/Galbar',
+            ),
+        ),
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }

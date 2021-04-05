@@ -6,4 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Utilities\\' => array($vendorDir . '/galbar/jsonpath/src/Galbar'),
+    'JsonPath\\' => array($vendorDir . '/galbar/jsonpath/src/Galbar'),
 );
