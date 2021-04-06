@@ -1,5 +1,7 @@
 <?php
 
+namespace CT_APITOOLS;
+
 /*
  * this showcase generats an json file which can b uses
  * to investigate the overall approach of access rights
@@ -13,39 +15,6 @@
  */
 
 
-// helpers for JSONPath
-
-use JsonPath\JsonObject;
-
-/**
- * find a set in a JSONPath
- *
- * @param $masterdata  the Jason Path objct
- * @param $jsonpath    the path to search for
- * @return mixed
- */
-function find_in_JSONPath(&$masterdata, $jsonpath)
-{
-    $result = $masterdata->get($jsonpath);
-    return $result;
-}
-
-/**
- *
- * find one in a JSONPath
- *
- * @param $masterdata  the Jason Path objct
- * @param $jsonpath    the path to search for
- * @return mixed | null
- */
-function find_one_in_JSONPath(&$masterdata, $jsonpath)
-{
-    $result = find_in_JSONPath($masterdata, $jsonpath);
-    $result = empty($result) ? null : $result[0];
-    return ($result);
-}
-
-
 // helpers for CT autho
 
 /**
@@ -57,7 +26,7 @@ function find_one_in_JSONPath(&$masterdata, $jsonpath)
  * @return string[]  athe result of the evaluation
  * @throws \Flow\JSONPath\JSONPathException
  */
-function resolve_auth_entry($auth_entry, JsonObject $masterdata_jsonpath, $datafield = null)
+function resolve_auth_entry($auth_entry, $masterdata_jsonpath, $datafield = null)
 {
     if (!isset($auth_entry)) {
         return null;
@@ -88,8 +57,7 @@ function resolve_auth_entry($auth_entry, JsonObject $masterdata_jsonpath, $dataf
             // there are sill some id which are strings
             if ($lookuptable == 'auth_table') {
                 $__auth_key = $__auth_key;
-            }
-            else{
+            } else {
                 $__auth_key = "'$__auth_key'";
             }
 
@@ -100,7 +68,7 @@ function resolve_auth_entry($auth_entry, JsonObject $masterdata_jsonpath, $dataf
                 $__authname = key_exists("auth", $__authrecord) ? " [{$__authrecord['auth']}]" : "";
                 $__modulename = "{$__authrecord['bezeichnung']}{$__authname}";
             } else {
-                var_dump($path, $__authrecord, $_auth_key,  $lookuptable);
+                // todo improve error handling
                 $__modulename = "$_auth_key undefined in $lookuptable ??";
             }
         }
@@ -146,7 +114,7 @@ function pushauthdef($hash, $role, $definition, &$authdefinitions)
  * @return array
  * @throws \Flow\JSONPath\JSONPathException
  */
-function read_auth_by_status(JsonObject $masterdata_jsonpath, array &$authdefinitions)
+function read_auth_by_status($masterdata_jsonpath, array &$authdefinitions)
 {
     $statuus = find_in_JSONPath($masterdata_jsonpath, '$..churchauth.status.*');
     $statusauth = [];  // here we collect the groptype auths
@@ -181,7 +149,7 @@ function read_auth_by_status(JsonObject $masterdata_jsonpath, array &$authdefini
  * @return array
  * @throws \Flow\JSONPath\JSONPathException
  */
-function read_auth_by_grouptypes(JsonObject $masterdata_jsonpath, &$authdefinitions)
+function read_auth_by_grouptypes($masterdata_jsonpath, &$authdefinitions)
 {
     $grouptypes = find_in_JSONPath($masterdata_jsonpath, '$..cdb_gruppentyp.*');
 
@@ -232,7 +200,7 @@ function read_auth_by_grouptypes(JsonObject $masterdata_jsonpath, &$authdefiniti
  * @return array
  * @throws \Flow\JSONPath\JSONPathException
  */
-function read_auth_by_groups(JsonObject $masterdata_jsonpath, &$authdefinitions)
+function read_auth_by_groups($masterdata_jsonpath, &$authdefinitions)
 {
     //$groups = find_in_JSONPath($masterdata_jsonpath,'$..groups.*');
 
@@ -284,8 +252,8 @@ $report = [
     'response' => "???"
 ];
 
-$masterdata = CT_APITOOLS\CTV1_sendRequest($ctdomain, $report['url'], $report['data']);
-$masterdata_jsonpath = new JsonObject($masterdata,);
+$masterdata = CTV1_sendRequest($ctdomain, $report['url'], $report['data']);
+$masterdata_jsonpath = create_JSONPath($masterdata);
 $authdefinitions = [];  // here we collect auth definietions
 
 // reading auth by status

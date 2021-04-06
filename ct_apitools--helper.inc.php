@@ -34,6 +34,51 @@ https://api.church.tools/index.html
 namespace CT_APITOOLS;
 
 /**
+ * helper for jsonpath
+ */
+
+use JsonPath\JsonObject;
+
+
+/**
+ * find a set in a JSONPath
+ *
+ * @param $masterdata  the Jason Path objct
+ * @param $jsonpath    the path to search for
+ * @return mixed
+ */
+function find_in_JSONPath(&$masterdata, $jsonpath)
+{
+    return ($masterdata->get($jsonpath));
+}
+
+/**
+ *
+ * find one in a JSONPath
+ *
+ * @param $masterdata  the Jason Path objct
+ * @param $jsonpath    the path to search for
+ * @return mixed | null
+ */
+function find_one_in_JSONPath(&$masterdata, $jsonpath)
+{
+    $result = find_in_JSONPath($masterdata, $jsonpath);
+    $result = empty($result) ? null : $result[0];
+    return ($result);
+}
+
+/**
+ * create a new instance of JSONObject to be used to retrieve json data
+ *
+ * @param $masterdata
+ * @return JsonObject
+ * @throws \JsonPath\InvalidJsonException
+ */
+function create_JSONPath($masterdata){
+    return new JSONObject($masterdata);
+}
+
+/**
  * Extract key for cokie store etc.
  *
  * @param $domain the url as to be specified in the api calls e.g. https://mychurch.church.tools/?q=api/ajax

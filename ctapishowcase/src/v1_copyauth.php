@@ -1,8 +1,5 @@
 <?php
-
-use JsonPath\JsonObject;
-
-
+namespace CT_APITOOLS;
 /*
  * this showcase applies access rights
  *
@@ -23,33 +20,6 @@ use JsonPath\JsonObject;
  * WTF license
  */
 
-
-/**
- * find a set in a JSONPath
- *
- * @param $masterdata  the Jason Path objct
- * @param $jsonpath    the path to search for
- * @return mixed
- */
-function find_in_JSONPath(&$masterdata, $jsonpath)
-{
-    return ($masterdata->get($jsonpath));
-}
-
-/**
- *
- * find one in a JSONPath
- *
- * @param $masterdata  the Jason Path objct
- * @param $jsonpath    the path to search for
- * @return mixed | null
- */
-function find_one_in_JSONPath(&$masterdata, $jsonpath)
-{
-    $result = find_in_JSONPath($masterdata, $jsonpath);
-    $result = empty($result) ? null : $result[0];
-    return ($result);
-}
 
 /**
  * @param $masterdata
@@ -198,7 +168,7 @@ function copy_auth(array $source, array $target, string $ctdomain)
         ]
     ];
 
-    $report['response'] = CT_APITOOLS\CTV1_sendRequest($ctdomain, $report['url'], $report['data']);
+    $report['response'] = CTV1_sendRequest($ctdomain, $report['url'], $report['data']);
     return $report;
 }
 
@@ -215,13 +185,19 @@ $report = [
     'response' => "???"
 ];
 
-$authmasterdata = CT_APITOOLS\CTV1_sendRequest($ctdomain, $report['url'], $report['data'])['data'];
-$authmasterdata_jsonp = new JSONObject($authmasterdata);
+$authmasterdata = CTV1_sendRequest($ctdomain, $report['url'], $report['data'])['data'];
+$authmasterdata_jsonp = create_JSONPath($authmasterdata);
 
 // read Source
-$source = get_authdomain($authmasterdata_jsonp, $argv[2]);
+if (isset($argv[3])) {
+    list($sourcedesignator, $targetdesignator) = [$argv[2], $argv[3]];
+} else {
+    list($sourcedesignator, $targetdesignator) = ["group:zz_sub-1:Teilnehmer", "grouptype:zz_auswahltest:testrolle"];
+}
+
+$source = get_authdomain($authmasterdata_jsonp,$sourcedesignator);
 // read target
-$target = get_authdomain($authmasterdata_jsonp, $argv[3]);
+$target = get_authdomain($authmasterdata_jsonp, $targetdesignator);
 
 $report = copy_auth($source, $target, $ctdomain);
 
