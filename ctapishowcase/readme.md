@@ -3,12 +3,12 @@
 ## usasge
 
 ```
-php showcase.php {showcase-glob}
+php ctcli.php {showcase-glob}
 ```
 
 where {showcase} matches a filename in folder `src`
 
-If now showcase is specified as an argumnt, all showcases will be processed.
+If no showcase is specified as an argumnt, all showcases will be processed.
 
 Please investigate the showcases to see the pattern applied:
 
