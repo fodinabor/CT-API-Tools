@@ -6,20 +6,6 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7
 {
-    public static $prefixLengthsPsr4 = array (
-        'F' => 
-        array (
-            'Flow\\JSONPath\\' => 14,
-        ),
-    );
-
-    public static $prefixDirsPsr4 = array (
-        'Flow\\JSONPath\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/softcreatr/jsonpath/src',
-        ),
-    );
-
     public static $prefixesPsr0 = array (
         'U' => 
         array (
@@ -40,8 +26,6 @@ class ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7::$prefixDirsPsr4;
             $loader->prefixesPsr0 = ComposerStaticInitd2152e5c71bf38d292ab6d3ad58a9fb7::$prefixesPsr0;
 
         }, null, ClassLoader::class);

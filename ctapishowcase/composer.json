@@ -1,6 +1,5 @@
 {
     "require": {
-        "softcreatr/jsonpath": "^0.5 || ^0.7",
         "galbar/jsonpath": "dev-master"
     }
 }
