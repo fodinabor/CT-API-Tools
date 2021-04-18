@@ -96,4 +96,5 @@ $report2['response'] = CT_APITOOLS\CTV2_sendRequest($report2);
 // beziehungen
 
 
-$report = ['report1' => $report1, 'report2' => $report2];
+$report = ['create person' => $report1, 'update person' => $report2];#
+
