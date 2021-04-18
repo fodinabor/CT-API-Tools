@@ -21,59 +21,6 @@
  * browsertabId: 301726627
  **/
 
-$groups = <<< EOT
-{
-    
-    "MG Davip Sonst": {
-        "Davip Vornamen": "textfeld",
-        "Davip Pfarrbezirksnr": "textfeld",
-        "Davip Briefanrede": "textfeld",
-        "Davip Kirchengemeinde": "textfeld",
-        "Davip Wohnungsstatus": "textfeld",
-        "Davip Sperr allgemein": "textfeld"
-    },
-    "MG Davip Haushalt": {
-        "Davip HH stif": "textfeld",
-        "Davip HH Ordn": "textfeld"
-    },
-    "MG Davip Trauung": {
-        "DaviP Trauung Datum": "datum",
-        "Davip Trauung Ort": "textfeld",
-        "Davip Trauung Kirche": "textfeld",
-        "Davip Trauung Gemeinde": "textfeld",
-        "Davip Trauung Konfess bet.": "auswahl",
-        "Davip Traunug_Bibelstelle": "textfeld",
-        "Davip Trauung Konfess": "auswahl",
-        "Davip Trauung Bibelstelle-1": "textfeld"
-    },
-    "MG Davip Konfirm": {
-        "Davip Konfess": "auswahl",
-        "Davip Konfi Bibelstelle": "textfeld",
-        "Davip Konfi Gemeinde": "textfeld",
-        "Davip Konfi Konfess": "auswahl",
-        "Davip Konfi Kirche": "textfeld",
-        "Davip Konfi Datum": "datum",
-        "Davip Konfi Ort": "textfeld",
-        "Davip Erstkomm Bibelstelle": "textfeld",
-        "Davip Konfess bish": "auswahl"
-    },
-    "MG Davip_zielgruppen": {
-        "Davip zielgruppen": "mehrfachauswahl"
-    },
-    "MG Davip Taufe": {
-        "Davip Taufe Datum": "datum",
-        "Davip Taufe Konfess": "auswahl",
-        "Davip Taufe Ort": "textfeld",
-        "Davip Taufe Gemeinde": "textfeld",
-        "Davip Taufe Kirche": "textfeld",
-        "Davip Taufe Segnung Bibelstelle": "textfeld"
-    },
-    "MG Davip Bestattung": {
-        "Davip Bestattung Ort": "textfeld",
-        "Davip Bestattung Datum": "textfeld"
-    }
-}
-EOT;
 
 $report = [];
 
@@ -106,8 +53,17 @@ function create_group($ctdomain, $groupname, $parent_id)
  * todo: more details ...
  *
  */
-function create_field(string $ctdomain, $group_id, string $fieldname): array
+function create_field(string $ctdomain, $group_id, string $fieldname, array $fielddef): array
 {
+    $lut = [
+        'text' => 1,
+        'select' => 1,
+        'date' => 1, // handle date as textfield
+        'multiselect' => 7,
+    ];
+
+    $options = array_key_exists('options', $fielddef) ? $fielddef['options'] : "";
+
     $report1 = [
         'url' => $ctdomain . '/?q=churchdb/ajax',
         'method' => "POST",
@@ -115,11 +71,12 @@ function create_field(string $ctdomain, $group_id, string $fieldname): array
             'func' => 'editAdditionalGroupField',
             'type' => 'custom',
             'fieldname' => $fieldname,
-            'defaultvalue' => "default",
-            'feldtyp_id' => 1,  // todo
+            'defaultvalue' => "",
+            'feldtyp_id' => $lut[$fielddef['type']],
+            'options' => $options,   //wir stellen multiselct nun doch als Textfeld dar
             'sortkey' => 0,
             'useinregistrationform_yn' => 0,
-            'securitylevel_id' => 1,
+            'securitylevel_id' => 4,  // todo
             'gruppe_id' => $group_id,
             'mandatory_yn' => 0
         ],
@@ -129,16 +86,22 @@ function create_field(string $ctdomain, $group_id, string $fieldname): array
     return $report1;
 }
 
-$requested_groups = json_decode($groups);
+
+//************************
+
+$requested_groups = json_decode(file_get_contents("inputs/01_mediator--real.json"), JSON_OBJECT_AS_ARRAY);
 
 // now generate the groups
 foreach ($requested_groups as $groupname => $groupfields) {
-    $result = create_group($ctdomain, $groupname, 71);
+    if ($groupname == "") {
+        continue;
+    }
+    $result = create_group($ctdomain, $groupname, 217);
     $group_id = $result['response']['data']['id'];
     $report[] = $result;
 
     foreach ($groupfields as $fieldname => $fielddef) {
-        $report[] = create_field( $ctdomain, $group_id,  $fieldname);
+        $report[] = create_field($ctdomain, $group_id, $fieldname, $fielddef);
     }
 }
 
