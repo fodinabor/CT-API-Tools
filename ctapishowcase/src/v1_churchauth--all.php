@@ -269,13 +269,11 @@ list($groupmissing, $groupauth) = read_auth_by_groups($masterdata_jsonpath, $aut
 
 $rubyfile = fopen(__DIR__ . "/../responses/v1_churchauth--all.rb", "w");
 
-fwrite($rubyfile, "def mk_imported_auth(plan)\n");
 foreach ($authdefinitions as $authdefinition => $value) {
     $defs = json_encode($value, JSON_UNESCAPED_UNICODE);
     $record = "  plan.add('$authdefinition', [], $defs)\n";
     fwrite($rubyfile, $record);
 }
-fwrite($rubyfile, "end\n");
 
 fclose($rubyfile);
 
