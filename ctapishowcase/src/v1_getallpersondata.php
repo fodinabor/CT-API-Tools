@@ -2,7 +2,7 @@
 
 
 $report = [
-    'url' => $ctdomain . '?q=churchdb/ajax' ,
+    'url' => $ctdomain . '/?q=churchdb/ajax' ,
     'method' => "POST",
     'data' => ['func'=>'getAllPersonData'],
     'response' => "???"
