@@ -4,8 +4,8 @@ namespace CT_APITOOLS;
  * this showcase applies access rights
  *
  * examples:
- * php showcase.php v1_copyauth "group:zz_sub-1:Teilnehmer" "group:zz_sub-1:Teenhelfer"
- * php showcase.php v1_copyauth "group:zz_sub-1:Teilnehmer" "grouptype:zz_auswahltest:testrolle"
+ * php ctcli.php v1_copyauth "group:zz_sub-1:Teilnehmer" "group:zz_sub-1:Teenhelfer"
+ * php ctcli.php v1_copyauth "group:zz_sub-1:Teilnehmer" "grouptype:zz_auswahltest:testrolle"
  *
  *
  * Designatore (group|grouptype):zz_sub-1:Teilnehmer
@@ -13,6 +13,10 @@ namespace CT_APITOOLS;
  * todo: improve error handling
  * * catch error 500
  * * catch invalid designators
+ * * support auth merging
+ * * support auth reset
+ * * support multiple targets
+ * * support manipulation
  *
  * todo: extract jsonPath helpers
  *
@@ -61,13 +65,6 @@ function get_authdomain_for_group($masterdata, string $name, string $role): arra
     // find the corresponding grouptype
     $path = "$.churchauth.grouptypeMemberstatus[?(@.bezeichnung == '$role' and @.gruppentyp_id == '$gruppentyp_id')].id";
     $grouptype_memberstatus_id = find_one_in_JSONPath($masterdata, $path);
-
-//    $path = "$.churchauth.grouptypeMemberstatus[?(@.bezeichnung == '$role')]";
-//    $x = find_in_JSONPath($masterdata, $path);
-//    $grouptype_memberstatus_id = array_filter($x, function ($y) use ($gruppentyp_id) {
-//        return ($y['gruppentyp_id'] == $gruppentyp_id);
-//    });
-//    $grouptype_memberstatus_id = array_values($grouptype_memberstatus_id)[0]['id'];
 
     // find the groupmemberstatus
 
@@ -126,25 +123,11 @@ function copy_auth(array $source, array $target, string $ctdomain)
     list ($source_authdomain, $source_auth_id, $source_auth, $sourcedesignator) = $source;
     list ($target_authdomain, $target_authdomain_id, $target_auth, $targetdesignator) = $target;
 
-    $authdata = [];
+    // copy the source to a new target for reference purpose
     $new_target_auth = $source_auth;
-    foreach (array_keys($new_target_auth) as $auth_id) {
-        $authvalues = $target_auth[$auth_id];
-        if (is_array($authvalues)) {
-            foreach ($authvalues as $authvalue) {
-                $authdata[] = [
-                    'auth_id' => $auth_id,
-                    'daten_id' => $authvalue
-                ];
-            }
-        } elseif (empty($authvalues)) {
-            $authdata[] = ['auth_id' => $auth_id];
-        } else {
-            $authdata[] = [
-                'auth_id' => "$auth_id"
-            ];
-        }
-    }
+
+    // serialize the auth data
+    $authdata = serialize_auth_data($new_target_auth);
 
     // prepare the saveAuth request
     $report = [
@@ -172,6 +155,33 @@ function copy_auth(array $source, array $target, string $ctdomain)
     return $report;
 }
 
+/**
+ * @param $new_target_auth
+ * @return array
+ */
+function serialize_auth_data($new_target_auth): array
+{
+    $authdata = [];
+    foreach (array_keys($new_target_auth) as $auth_id) {
+        $authvalues = $new_target_auth[$auth_id];
+        if (is_array($authvalues)) {
+            foreach ($authvalues as $authvalue) {
+                $authdata[] = [
+                    'auth_id' => $auth_id,
+                    'daten_id' => $authvalue
+                ];
+            }
+        } elseif (empty($authvalues)) {
+            $authdata[] = ['auth_id' => $auth_id];
+        } else {
+            $authdata[] = [
+                'auth_id' => "$auth_id"
+            ];
+        }
+    }
+    return $authdata;
+}
+
 
 ///// script body starts here
 // read auth masterdata
@@ -195,14 +205,11 @@ if (isset($argv[3])) {
     list($sourcedesignator, $targetdesignator) = ["group:zz_sub-1:Teilnehmer", "grouptype:zz_auswahltest:testrolle"];
 }
 
-$source = get_authdomain($authmasterdata_jsonp,$sourcedesignator);
+$source = get_authdomain($authmasterdata_jsonp, $sourcedesignator);
 // read target
 $target = get_authdomain($authmasterdata_jsonp, $targetdesignator);
 
-$report = copy_auth($source, $target, $ctdomain);
+$report_1 = copy_auth(["", "", [], "clear"], $target, $ctdomain);
+$report_2 = copy_auth($source, $target, $ctdomain);
 
-
-
-
-
-
+$report = ['report_1' => $report_1, 'report_2' => $report_2];
