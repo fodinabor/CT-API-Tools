@@ -16,7 +16,7 @@ namespace CT_APITOOLS;
  * @param $ctdomain the ctdomain
  * @return array [groupname/fieldname => ['grouppId' => .., 'fieldId' => .. ]]
  */
-function extracted($groups, $ctdomain): array
+function extractgroupfieldindex($groups, $ctdomain): array
 {
     $allgroupfields = [];
     foreach ($groups as $group) {
@@ -56,7 +56,7 @@ $report1['response'] = CTV2_sendRequestWithPagination($report1);
 // just create a sample for "$ctdomain/api/groups/$group_id/memberfields"
 
 $groups = create_JSONPath($report1);
-$path = "$.response.data..*[?(@.name == '$groupnamex')].id";
+$path = "$.response.data..*[?(@.name == '$groupname')].id";
 $group_id = find_one_in_JSONPath($groups, $path);
 
 $report2 = [
@@ -71,7 +71,7 @@ $report3['response'] = CTV2_sendRequest($report3);
 // creating index for groupfields
 // collect from all groups
 $groups = $report1['response']['data'];
-$allgroupfields = extracted($groups, $ctdomain);
+$allgroupfields = extractgroupfieldindex($groups, $ctdomain);
 
 // finalize the result
 
