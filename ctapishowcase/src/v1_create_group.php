@@ -89,14 +89,23 @@ function create_field(string $ctdomain, $group_id, string $fieldname, array $fie
 
 //************************
 
-$requested_groups = json_decode(file_get_contents("inputs/01_mediator--real.json"), JSON_OBJECT_AS_ARRAY);
+$groupfile = "inputs/01_mediator--real.json";
+$parentgroupid = 217;
+if (count($argv) >= 4) {
+    $groupfile = $argv[2];
+    $parentgroupid = $argv[3];
+}
+
+echo "\n crating groups from $groupfile under $parentgroupid";
+
+$requested_groups = json_decode(file_get_contents($groupfile), JSON_OBJECT_AS_ARRAY);
 
 // now generate the groups
 foreach ($requested_groups as $groupname => $groupfields) {
     if ($groupname == "") {
         continue;
     }
-    $result = create_group($ctdomain, $groupname, 217);
+    $result = create_group($ctdomain, $groupname, $parentgroupid); // 237
     $group_id = $result['response']['data']['id'];
     $report[] = $result;
 

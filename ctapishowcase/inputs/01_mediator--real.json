@@ -99,6 +99,9 @@
         },
         "zusatz": {
             "type": "text"
+        },
+        "VM Davipimport Datum": {
+            "type": "text"
         }
     },
     "VM Sonstiges": {
@@ -246,6 +249,14 @@
             "type": "text"
         },
         "VM Segnung Bibelstelle": {
+            "type": "text"
+        }
+    },
+    "VM ZZ_Importinfo": {
+        "VM Davipimport datum": {
+            "type": "text"
+        },
+        "VM Davipimport status": {
             "type": "text"
         }
     }
