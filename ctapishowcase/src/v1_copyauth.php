@@ -120,6 +120,7 @@ function get_authdomain_for_grouptype($masterdata, string $name, string $role): 
  */
 function copy_auth(array $source, array $target, string $ctdomain)
 {
+    // source_authdomain, $sourct_auth_id are not relevant. the exist just for symmetry reasons
     list ($source_authdomain, $source_auth_id, $source_auth, $sourcedesignator) = $source;
     list ($target_authdomain, $target_authdomain_id, $target_auth, $targetdesignator) = $target;
 
