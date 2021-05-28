@@ -5,14 +5,10 @@ $report = [
     'url' => $ctdomain . '/?q=churchdb/ajax',
     'method' => "POST",
     'data' => [
-        'func' => 'addPersonGroupRelation',
-        'comment' => "das ist importiert,",
-        'custom44' => 1,
-        'custom38' => 'das ist das textfeld importiert',
-        'custom41' => 'o1',
-        'custom35' => '10,11,test13',
-        'id' => 815,
-        'g_id' => 63,
+        'func' => 'editPersonGroupRelation',
+        'custom4594' => '01,02',
+        'id' => 132,
+        'g_id' => 622,
         'groupmemberstatus_id'=> 8
     ]
 ];
