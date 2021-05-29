@@ -1,0 +1,263 @@
+{
+    "": {
+        "name": {
+            "type": "text"
+        },
+        "strasse": {
+            "type": "text"
+        },
+        "plz": {
+            "type": "text"
+        },
+        "": {
+            "type": "text"
+        },
+        "ct_ignore": {
+            "type": "text"
+        },
+        "VM Dateibereich": {
+            "type": "text"
+        },
+        "spitzname": {
+            "type": "text"
+        },
+        "VM kirchliches Ordnungsmerkmal": {
+            "type": "text"
+        },
+        "VM anredetext": {
+            "type": "text"
+        },
+        "VM Briefanrede": {
+            "type": "text"
+        },
+        "vorname": {
+            "type": "text"
+        },
+        "_undefined_": {
+            "type": "text"
+        },
+        "ort": {
+            "type": "text"
+        },
+        "bgk_anrede_familie_brief": {
+            "type": "text"
+        },
+        "bgk_anrede_familie": {
+            "type": "text"
+        },
+        "familienstand_no": {
+            "type": "text"
+        },
+        "geburtsname": {
+            "type": "text"
+        },
+        "geburtsort": {
+            "type": "text"
+        },
+        "geschlecht_no": {
+            "type": "select",
+            "options": "1, 2, 3"
+        },
+        "geburtsdatum": {
+            "type": "date"
+        },
+        "nationalitaet_id": {
+            "type": "text"
+        },
+        "VM umzugZuStraße": {
+            "type": "text"
+        },
+        "email": {
+            "type": "text"
+        },
+        "beruf": {
+            "type": "text"
+        },
+        "UNBEKANNT": {
+            "type": "text"
+        },
+        "eintrittsdatum": {
+            "type": "date"
+        },
+        "telefonprivat": {
+            "type": "text"
+        },
+        "VM ortsteilname": {
+            "type": "text"
+        },
+        "titel": {
+            "type": "text"
+        },
+        "VM kommunalesOrdnungsmerkmal": {
+            "type": "text"
+        },
+        "austrittsdatum": {
+            "type": "date"
+        },
+        "VM ablaufdatumAuskunftSperr": {
+            "type": "text"
+        },
+        "zusatz": {
+            "type": "text"
+        },
+        "VM Davipimport Datum": {
+            "type": "text"
+        }
+    },
+    "VM Sonstiges": {
+        "VM Vornamen": {
+            "type": "text"
+        },
+        "VM Pfarrbezirksnr": {
+            "type": "text"
+        },
+        "VM Kirchengemeinde": {
+            "type": "text"
+        },
+        "VM Wohnungsstatus": {
+            "type": "text"
+        },
+        "VM Sperr allgemein": {
+            "type": "text"
+        },
+        "VM Geburtsland": {
+            "type": "select",
+            "options": "Deutschland, Niederlande"
+        }
+    },
+    "VM Haushalt": {
+        "VM HH stif": {
+            "type": "text"
+        },
+        "VM HH Ordn": {
+            "type": "text"
+        }
+    },
+    "VM Trauung": {
+        "VM Trauung Ehedatum": {
+            "type": "date"
+        },
+        "VM Trauung Ort": {
+            "type": "text"
+        },
+        "VM Trauung Kirche": {
+            "type": "text"
+        },
+        "VM Trauung Gemeinde": {
+            "type": "text"
+        },
+        "VM Trauung Traudatum": {
+            "type": "text"
+        },
+        "VM Trauung Konfess bet.": {
+            "type": "select",
+            "options": "bk, ef, em, ev, fk, fr, k, ka, lt, me, oa, rf, rk, un, vd"
+        },
+        "VM Trauung Bibelstelle": {
+            "type": "text"
+        },
+        "VM Trauung Konfess": {
+            "type": "select",
+            "options": "bk, ef, em, ev, fk, fr, k, ka, lt, me, oa, rf, rk, un, vd"
+        },
+        "VM Trauung Bibelstelle-1": {
+            "type": "text"
+        }
+    },
+    "VM Konfirmation": {
+        "VM Konfess": {
+            "type": "select",
+            "options": "bk, ef, em, ev, fk, fr, k, ka, lt, me, oa, rf, rk, un, vd"
+        },
+        "VM Konfi Bibelstelle": {
+            "type": "text"
+        },
+        "VM Konfi Gemeinde": {
+            "type": "text"
+        },
+        "VM Konfi Konfess": {
+            "type": "select",
+            "options": "bk, ef, em, ev, fk, fr, k, ka, lt, me, oa, rf, rk, un, vd"
+        },
+        "VM Konfi Kirche": {
+            "type": "text"
+        },
+        "VM Konfi Datum": {
+            "type": "date"
+        },
+        "VM Konfi Ort": {
+            "type": "text"
+        },
+        "VM Konfess bish": {
+            "type": "select",
+            "options": "bk, ef, em, ev, fk, fr, k, ka, lt, me, oa, rf, rk, un, vd"
+        }
+    },
+    "VM Bestattung": {
+        "VM Bestattung Sterbedatum": {
+            "type": "text"
+        },
+        "VM Bestattung Ort": {
+            "type": "text"
+        },
+        "VM Bestattung Datum": {
+            "type": "text"
+        }
+    },
+    "VM Zielgruppen": {
+        "VM zielgruppen": {
+            "type": "multiselect",
+            "options": "00, 01, 02, 03, 04, 05, 07, 08, 09, 10, 11, 12, 15"
+        }
+    },
+    "VM Taufe": {
+        "VM Taufe Datum": {
+            "type": "date"
+        },
+        "VM Taufe Konfess": {
+            "type": "select",
+            "options": "bk, ef, em, ev, fk, fr, k, ka, lt, me, oa, rf, rk, un, vd"
+        },
+        "VM Taufe Ort": {
+            "type": "text"
+        },
+        "VM Taufe Gemeinde": {
+            "type": "text"
+        },
+        "VM Taufe Kirche": {
+            "type": "text"
+        },
+        "VM Taufe Bibelstelle": {
+            "type": "text"
+        }
+    },
+    "VM Segnung": {
+        "VM Segnung Datum": {
+            "type": "date"
+        },
+        "VM Segnung Konfess": {
+            "type": "select",
+            "options": "bk, ef, em, ev, fk, fr, k, ka, lt, me, oa, rf, rk, un, vd"
+        },
+        "VM Segnung Ort": {
+            "type": "text"
+        },
+        "VM Segnung Gemeinde": {
+            "type": "text"
+        },
+        "VM Segung Kirche": {
+            "type": "text"
+        },
+        "VM Segnung Bibelstelle": {
+            "type": "text"
+        }
+    },
+    "VM ZZ_Importinfo": {
+        "VM Davipimport datum": {
+            "type": "text"
+        },
+        "VM Davipimport status": {
+            "type": "text"
+        }
+    }
+}
