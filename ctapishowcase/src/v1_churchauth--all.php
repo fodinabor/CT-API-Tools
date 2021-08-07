@@ -110,8 +110,12 @@ class GroupHierarchy implements JsonSerializable
                 if (array_key_exists($groupname, $this->groups)) {
                     $result = $groupname;
                 } else {
-                    $result = array_key_exists("$groupname",
-                        $this->groupids) ? $this->groupids["$groupname"] : "error $groupname";
+                    if (array_key_exists("$groupname", $this->groupids)) {
+                        $result = $this->groupids["$groupname"];
+                    } else {
+                        echo("ERROR missing group: $groupname\n");
+                        $result = "$groupname";
+                    }
                 }
                 return $result;
             }, $parents);
@@ -295,7 +299,7 @@ EOT;
 //    n_NodeLabel.content = "[#{group_type[:prefix]}] #{group['name']} (#{id})"
 //    n_NodeLabel.content = "#{group['name']} (#{id})"
 //
-            $content = "{$group['name']} ({$group['id']})";
+            $content = str_replace("&", "&amp;", "{$group['name']} ({$group['id']})");
             $n_shapenode->addChild('NodeLabel', $content, "http://www.yworks.com/xml/graphml");
 
 //    n_Geometry          = Nokogiri::XML::Node.new "y:Geometry", doc
@@ -1014,7 +1018,7 @@ foreach ($groups as $group) {
 
     //  # work around https://forum.church.tools/topic/7267/api-v2-gruppeninfo-liefert-nicht-immer-einen-gruppentyp
     //  # with group.dig("roles", 0, "groupTypeId") instead of group.dig("information", "groupTypeId")
-    $desc = $group['information']['note'];
+    $desc = array_key_exists('note',$group['information'])?$group['information']['note']: "";
     if (array_key_exists('groupTypeId', $group['information'])) {
         $type = $group['information']['groupTypeId'];
     } else {
@@ -1027,7 +1031,7 @@ foreach ($groups as $group) {
 $grouphierarchy->buildhierarchy(); // to build internal hierarchy
 
 // reading grouptypes and grouptyperoles
-echo "creading grouptypes and grouptyperoles\n";
+echo "creating grouptypes and grouptyperoles\n";
 $report4 = [
     'url' => "$ctdomain/api/person/masterdata",
     'method' => "GET",
@@ -1061,28 +1065,30 @@ $grouphierarchy->add("ST Status", ["GL Globale Rechte"]);
 
 ///// create result files
 
+$filebase = __DIR__ . "/../responses/v1_churchauth--all";
+
 echo "create rubysimulation\n";
 create_rubysimulationfile($authdefinitions + $pseudogroups,
-    __DIR__ . "/../responses/v1_churchauth--all.rb",
+    "$filebase.rb",
     $grouphierarchy);
 
 echo "create markdown report\n";
 create_markdownreport($authdefinitions,
-    __DIR__ . "/../responses/v1_churchauth--all.md");
+    "$filebase.md");
 
 echo "create json report\n";
 create_jsonreport($authdefinitions,
-    __DIR__ . "/../responses/v1_churchauth--all.json");
+    "$filebase.json");
 
 // write puml file
 echo "create plantuml file\n";
-$pumlfile = fopen(__DIR__ . "/../responses/v1_churchauth--all.puml", "w");
+$pumlfile = fopen("$filebase.puml", "w");
 fwrite($pumlfile, $grouphierarchy->toplantuml());
 fclose($pumlfile);
 
 // write graphml file
 echo "create graphml file\n";
-$graphmlfile = fopen(__DIR__ . "/../responses/v1_churchauth--all.graphml", "w");
+$graphmlfile = fopen("$filebase.graphml", "w");
 fwrite($graphmlfile, $grouphierarchy->tographml());
 fclose($graphmlfile);
 
@@ -1099,10 +1105,13 @@ $report['response'] = [
         'authdefintions' => $authdefinitions,
         'pseudogroups' => $pseudogroups,
         'grouphierarchy' => $grouphierarchy,
+       // 'report2' => $report2,
+       // 'report3' => $report3,
     ]
 ];
 
+// ths depends on $report
 create_whocanwahtreport($report['response'],
-    __DIR__ . "/../responses/v1_churchauth--all--whocanwhat");
+    "$filebase--whocanwhat");
 
 
