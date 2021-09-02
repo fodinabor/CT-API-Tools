@@ -409,13 +409,13 @@ function getgrouptypeabbreviation($grouptypename)
  * @return array|array[]|null
  * @throws InvalidJsonPathException InvalidJsonException
  */
-function resolve_auth_entry($auth_entry, &$masterdata_jsonpath, $datafield = null)
+function resolve_auth_entry($auth_entry, &$masterdata_jsonpath, $datafield = null, $permission_deep_no=null)
 {
     if (!isset($auth_entry)) {
         return null;
     }
 
-    $result = array_map(function ($_auth_key) use (&$masterdata_jsonpath, $auth_entry, $datafield) {
+    $result = array_map(function ($_auth_key) use (&$masterdata_jsonpath, $auth_entry, $datafield, $permission_deep_no) {
         $_authvalue = $auth_entry[$_auth_key];
         // todo fix handling of missing targets and auth parameters.
         // todo fix handling of auth for subgroups
@@ -433,9 +433,9 @@ function resolve_auth_entry($auth_entry, &$masterdata_jsonpath, $datafield = nul
         } else {
             // workaround the type-mess of ids in CT
             $__auth_key = $_auth_key;
-            // if we have subgroup stuff such as "10001D" - lookup fore 10001
+            // if we have subgroup stuff such as "10001D" - lookup for 10001
             if ((substr($__auth_key, -1) == 'D')) {
-                $deep = " in Untergruppen";
+                $deep = " in Untergruppen ($permission_deep_no)";
                 $__auth_key = (int)$_auth_key;
             } else {
                 $deep = "";
@@ -682,15 +682,17 @@ function read_auth_by_groups(JsonObject $masterdata_jsonpath, array &$authdefini
 
         // ase we iterate throu groupmemberauth we can be sure there is an 'auth' Property
         $auth = $authentry['auth'];
+        $group = find_one_in_JSONPath($masterdata_jsonpath, "$..group.{$authentry['group_id']}");
         $resolved_authentry = [
-            'group' => find_one_in_JSONPath($masterdata_jsonpath, "$..group.{$authentry['group_id']}.bezeichnung"),
+            'group' => $group['bezeichnung'],
             'role' => find_one_in_JSONPath($masterdata_jsonpath,
                 "$..grouptypeMemberstatus[?(@.id == '{$authentry['grouptype_memberstatus_id']}')].bezeichnung"),
             'group_id' => $authentry['group_id'],
             'groupMemberstatus_id' => $authentry['id'],
             'auth_hash' => $hash,
             'auth' => $auth,
-            'resolved_auth' => resolve_auth_entry($auth, $masterdata_jsonpath)
+            'permission_deep_no' => $group['permission_deep_no'],
+            'resolved_auth' => resolve_auth_entry($auth, $masterdata_jsonpath, null, $group['permission_deep_no'])
         ];
 
 
