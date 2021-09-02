@@ -4,15 +4,18 @@
  */
 
 namespace CT_APITOOLS;
+
+use Cassandra\Exception\RangeException;
+
 require 'vendor/autoload.php';
 
-require_once "../ct_apitools--helper.inc.php";
+require_once __DIR__ . "/../ct_apitools--helper.inc.php";
 require_once('CT-credentialstore.php');
 
 /**
  * find the showcases to be processed
  */
-if (count($argv) > 1 ){
+if (count($argv) > 1) {
     $showcases = glob("src/*{$argv[1]}*.php");
 } else {
     $showcases = glob("src/*.php");
@@ -28,13 +31,19 @@ $ajax_domain = $ctdomain . "/?q=";
 $email = CREDENTIALS['ctusername'];
 $password = CREDENTIALS['ctpassword'];
 
+if (!array_key_exists('ctinstance', CREDENTIALS)) {
+    $x = preg_match("/https:\/\/([^\.]+)/", $ctdomain, $matches);
+    $ctinstance = "{$matches[1]}_";
+} else {
+    $ctinstance = CREDENTIALS['ctinstance'];
+}
+
 $result = CT_loginAuth($ctdomain, $email, $password);
 
 if (!$result['status'] == 'success') {
     var_dump($result);
     die("Showcase aborted");
 }
-
 
 
 /**
@@ -49,12 +58,13 @@ foreach ($showcases as $showcase) {
     $body = [];
     $report = [];
     echo "doing $showcase\n";
+
+    $showcasebase = basename($showcase, ".php");
+    $outfilebase = "responses/$ctinstance/$showcasebase";
     require_once($showcase);
 
-    $outfilebase = basename($showcase, ".php");
-
-    $myfile = fopen("responses/$outfilebase.json", "w") or die("Unable to open file!");
-    fwrite($myfile, json_encode($report, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
+    $myfile = fopen("responses/{$ctinstance}{$showcasebase}.json", "w") or die("Unable to open file!");
+    fwrite($myfile, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     fclose($myfile);
 }
 /**

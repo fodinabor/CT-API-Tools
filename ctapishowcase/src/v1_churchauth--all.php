@@ -409,13 +409,18 @@ function getgrouptypeabbreviation($grouptypename)
  * @return array|array[]|null
  * @throws InvalidJsonPathException InvalidJsonException
  */
-function resolve_auth_entry($auth_entry, &$masterdata_jsonpath, $datafield = null, $permission_deep_no=null)
+function resolve_auth_entry($auth_entry, &$masterdata_jsonpath, $datafield = null, $permission_deep_no = null)
 {
     if (!isset($auth_entry)) {
         return null;
     }
 
-    $result = array_map(function ($_auth_key) use (&$masterdata_jsonpath, $auth_entry, $datafield, $permission_deep_no) {
+    $result = array_map(function ($_auth_key) use (
+        &$masterdata_jsonpath,
+        $auth_entry,
+        $datafield,
+        $permission_deep_no
+    ) {
         $_authvalue = $auth_entry[$_auth_key];
         // todo fix handling of missing targets and auth parameters.
         // todo fix handling of auth for subgroups
@@ -682,7 +687,7 @@ function read_auth_by_groups(JsonObject $masterdata_jsonpath, array &$authdefini
 
         // ase we iterate throu groupmemberauth we can be sure there is an 'auth' Property
         $auth = $authentry['auth'];
-        $group = find_one_in_JSONPath($masterdata_jsonpath, "$..group.{$authentry['group_id']}");
+        $group = find_one_in_JSONPath($masterdata_jsonpath, "$.data.churchauth.group.{$authentry['group_id']}");
         $resolved_authentry = [
             'group' => $group['bezeichnung'],
             'role' => find_one_in_JSONPath($masterdata_jsonpath,
@@ -796,7 +801,7 @@ function create_jsonreport($authdefinitions, $filename)
  * @param $response
  * @param $filename
  */
-function create_whocanwahtreport($response, $filename)
+function create_whocanwhatreport($response, $filename)
 {
 
     $sectionnames = [
@@ -806,7 +811,7 @@ function create_whocanwahtreport($response, $filename)
         'auth_by_groups' => '3 Gruppe     ',
     ];
 
-    $authcollection = [];
+    $whocanwhat = [];
 
     echo "create_whocanwahtreport\n";
     foreach ($response as $section => $value) {
@@ -818,13 +823,14 @@ function create_whocanwahtreport($response, $filename)
 
         $currenthead = $sectionnames[$section];
 
-        foreach ($value as $grantee => $grants) {
 
+        // now
+        foreach ($value as $grantee => $grants) {
             $role = array_key_exists('membertype', $grants) ? $grants['membertype'] : $grantee;
 
             // this is a grant for person / status (it has no roles)
             if (array_key_exists('resolved_auth', $grants)) {
-                push_authcollection($grants['resolved_auth'], $authcollection, "$currenthead: $role");
+                push_authcollection($grants['resolved_auth'], $whocanwhat, "$currenthead: $role");
             } else {
                 // for grouptypes, groups which have roles
                 foreach ($grants as $role => $rolegrants) {
@@ -836,7 +842,7 @@ function create_whocanwahtreport($response, $filename)
                     $role = array_key_exists('membertype', $rolegrants) ? $rolegrants['membertype'] : $role;
 
                     if (array_key_exists('resolved_auth', $rolegrants)) {
-                        push_authcollection($rolegrants['resolved_auth'], $authcollection,
+                        push_authcollection($rolegrants['resolved_auth'], $whocanwhat,
                             "$currenthead: $grantee: [$role]");
                     } else {
                         // todo for pseudo groups like GRRLLN
@@ -850,13 +856,13 @@ function create_whocanwahtreport($response, $filename)
     // the result.
 
     // sort the grants
-    $grants = array_keys($authcollection);
+    $grants = array_keys($whocanwhat);
     sort($grants);
 
     // generate the result, thereby sort the grantees within the grants
     $result = [];
     foreach ($grants as $grant) {
-        $grantees = $authcollection[$grant];
+        $grantees = $whocanwhat[$grant];
         sort($grantees);
         $result[$grant] = $grantees;
     }
@@ -877,12 +883,76 @@ function create_whocanwahtreport($response, $filename)
     }
     fclose($outfile);
 
+    return $whocanwhat;
 }
 
 /**
- * @param $resolved_auth
- * @param array $authcollection
- * @param $grantee
+ * inveerts whocanwhat such that we get whatcanwho
+ *
+ * @param $whocanwhat
+ * @return array
+ */
+function invert_whocanwhat($whocanwhat)
+{
+    $result = [];
+
+    foreach ($whocanwhat as $grant => $grantees) {
+        foreach ($grantees as $grantee) {
+            if (!array_key_exists($grantee, $result)) {
+                $result[$grantee] = [];
+            }
+            $result[$grantee][] = $grant;
+        }
+    }
+
+    return $result;
+}
+
+function find_roles_in_whatcanwho($whatcanwho)
+{
+    $result = [];
+
+    $whatcanwhokeys = array_keys($whatcanwho);
+    sort($whatcanwhokeys);
+
+    foreach ($whatcanwhokeys as $whatcanwhokey) {
+
+        $who = $whatcanwhokey;
+        $grant = $whatcanwho[$whatcanwhokey];
+
+        // find other grantees with the same or more grants
+        foreach ($whatcanwhokeys as $whoelse) {
+            $grantelse = $whatcanwho[$whoelse];
+            if (empty(array_diff($grant, $grantelse))) {
+                if (!array_key_exists($who, $result)) {
+                    $result[$who] = [];
+                    $result[$who]['kann'] = $grant;
+                    $result[$who]['wie auch'] = [];
+                }
+                if ($who !== $whoelse) {
+
+                    $c1 = count($grantelse);
+                    $c2 = count($grant);
+                    $diff = $c1 - $c2;
+                    $result[$who]['wie auch'][] = "$whoelse  (+ $diff)";
+                }
+            }
+        }
+    }
+
+    // c
+    return $result;
+}
+
+/**
+ *
+ * push auth for a given grantee to the authcollection
+ *
+ * eventurally authcollection is a flat list
+ *
+ * @param $resolved_auth  array authentifications for $grantee
+ * @param array $authcollection array the result where we collect all the authentifications
+ * @param $grantee string the name of the grante (status, grouptype+role ...)
  * @return array|null
  */
 function push_authcollection($resolved_auth, array &$authcollection, $grantee)
@@ -894,10 +964,14 @@ function push_authcollection($resolved_auth, array &$authcollection, $grantee)
         if (is_array($authentry[$grant])) {
             foreach ($authentry[$grant] as $subgrant) {
                 $subgrantkey = array_keys($subgrant)[0];
+                // uncomment to swap grant, subgrant
+                // push_authcollection([["$grant [$subgrantkey]" => ""]], $authcollection, $grantee);
                 push_authcollection([["$subgrantkey ($grant)" => ""]], $authcollection, $grantee);
             }
         } else {
             // no subelements - push auth directly.
+            // applies basiccally to person, status
+            // ore recurcive invocation of authcollction with subgrantee
             if (!array_key_exists($grant, $authcollection)) {
                 $authcollection[$grant] = [];
             }
@@ -1020,7 +1094,7 @@ foreach ($groups as $group) {
 
     //  # work around https://forum.church.tools/topic/7267/api-v2-gruppeninfo-liefert-nicht-immer-einen-gruppentyp
     //  # with group.dig("roles", 0, "groupTypeId") instead of group.dig("information", "groupTypeId")
-    $desc = array_key_exists('note',$group['information'])?$group['information']['note']: "";
+    $desc = array_key_exists('note', $group['information']) ? $group['information']['note'] : "";
     if (array_key_exists('groupTypeId', $group['information'])) {
         $type = $group['information']['groupTypeId'];
     } else {
@@ -1067,7 +1141,8 @@ $grouphierarchy->add("ST Status", ["GL Globale Rechte"]);
 
 ///// create result files
 
-$filebase = __DIR__ . "/../responses/v1_churchauth--all";
+
+$filebase = __DIR__ . "/../responses/{$ctinstance}v1_churchauth--all";
 
 echo "create rubysimulation\n";
 create_rubysimulationfile($authdefinitions + $pseudogroups,
@@ -1107,13 +1182,34 @@ $report['response'] = [
         'authdefintions' => $authdefinitions,
         'pseudogroups' => $pseudogroups,
         'grouphierarchy' => $grouphierarchy,
-       // 'report2' => $report2,
-       // 'report3' => $report3,
+//        'report1' => $report1,
+//        'report2' => $report2,
+//        'report3' => $report3,
+//        'report4' => $report4,
     ]
 ];
 
 // ths depends on $report
-create_whocanwahtreport($report['response'],
+$whocanwhat = create_whocanwhatreport($report['response'],
     "$filebase--whocanwhat");
 
+$whatcanwho = invert_whocanwhat($whocanwhat);
+$whoelse = find_roles_in_whatcanwho($whatcanwho);
+
+// write misc json file for further investigation
+echo "write misc json\n";
+
+// sensure sorting
+ksort($whocanwhat);
+ksort($whatcanwho);
+ksort($whoelse);
+
+//write data
+$miscjsonfile = fopen("$filebase.misc.json", "w");
+$miscreport = [];
+$miscreport['whocanwhat'] = $whocanwhat;
+$miscreport['whatcanhwo'] = $whatcanwho;
+$miscreport['whoelse'] = $whoelse;
+fwrite($miscjsonfile, json_encode($miscreport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+fclose($miscjsonfile);
 
