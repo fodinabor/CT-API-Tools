@@ -31,6 +31,7 @@ $ajax_domain = $ctdomain . "/?q=";
 $email = CREDENTIALS['ctusername'];
 $password = CREDENTIALS['ctpassword'];
 
+// if no ctiinstance is provided, we extract it from the ctdomain
 if (!array_key_exists('ctinstance', CREDENTIALS)) {
     $x = preg_match("/https:\/\/([^\.]+)/", $ctdomain, $matches);
     $ctinstance = "{$matches[1]}_";
@@ -42,7 +43,7 @@ $result = CT_loginAuth($ctdomain, $email, $password);
 
 if (!$result['status'] == 'success') {
     var_dump($result);
-    die("Showcase aborted");
+    die("Showcase aborted / login failed");
 }
 
 
@@ -60,10 +61,14 @@ foreach ($showcases as $showcase) {
     echo "doing $showcase\n";
 
     $showcasebase = basename($showcase, ".php");
-    $outfilebase = "responses/$ctinstance/$showcasebase";
+    $outfolder = array_key_exists('outfolder', CREDENTIALS) ? CREDENTIALS['outfolder'] : __DIR__ . "/responses";
+
+    // note there is no separator between ctinstance and showcasebase
+    // to support filename built of showcasebase only (without mentioning the ctinstance)
+    $outfilebase = "$outfolder/{$ctinstance}$showcasebase";
     require_once($showcase);
 
-    $myfile = fopen("responses/{$ctinstance}{$showcasebase}.json", "w") or die("Unable to open file!");
+    $myfile = fopen("$outfilebase.json", "w") or die("Unable to open file!");
     fwrite($myfile, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     fclose($myfile);
 }
@@ -73,4 +78,4 @@ foreach ($showcases as $showcase) {
 
 
 CT_logout($ajax_domain);
-echo("logged out");
+echo("logged out\n");

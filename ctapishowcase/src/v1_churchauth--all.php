@@ -1157,7 +1157,7 @@ $grouphierarchy->add("ST Status", ["GL Globale Rechte"]);
 ///// create result files
 
 
-$filebase = __DIR__ . "/../responses/{$ctinstance}v1_churchauth--all";
+$filebase = $outfilebase;
 
 echo "create rubysimulation\n";
 create_rubysimulationfile($authdefinitions + $pseudogroups,
