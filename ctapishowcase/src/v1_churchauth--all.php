@@ -586,23 +586,29 @@ function read_auth_by_status($masterdata_jsonpath, array &$authdefinitions, arra
 
 function read_auth_by_grouptypes(JsonObject $masterdata_jsonpath, array &$authdefinitions, array &$pseudogroups): array
 {
-    $grouptypes = find_in_JSONPath($masterdata_jsonpath, '$..cdb_gruppentyp.*');
+    $grouptypes = find_in_JSONPath($masterdata_jsonpath, '$.data.churchauth.cdb_gruppentyp.*');
 
     $grouptypeauth = [];  // here we collect the groptype auths
 
     foreach ($grouptypes as $grouptype) {
         $grouptypeid = $grouptype['id'];
         $grouptypename = $grouptype['bezeichnung'];
+        $permission_deep_no = $grouptype['permission_deep_no'];
 
         // get membertype
         // todo remove full scan in loop
         $membertypes = find_in_JSONPath($masterdata_jsonpath,
             "$..grouptypeMemberstatus[?(@.gruppentyp_id == '$grouptypeid')]");
-        $r = array_map(function ($authentry) use ($grouptypename, $masterdata_jsonpath, &$authdefinitions) {
+        $r = array_map(function ($authentry) use (
+            $grouptypename,
+            $masterdata_jsonpath,
+            $permission_deep_no,
+            &$authdefinitions
+        ) {
 
             // there might be grouptypes without auth enty
             $auth = (array_key_exists('auth', $authentry)) ? $authentry['auth'] : [];
-            $resolved_auth = resolve_auth_entry($auth, $masterdata_jsonpath);
+            $resolved_auth = resolve_auth_entry($auth, $masterdata_jsonpath, null, $permission_deep_no);
 
             $hash = hash('md5', json_encode($resolved_auth));
 
@@ -677,7 +683,7 @@ function read_auth_by_groups(JsonObject $masterdata_jsonpath, array &$authdefini
 {
     //$groups = find_in_JSONPath($masterdata_jsonpath,'$..groups.*');
 
-    $groupmemberauth = find_in_JSONPath($masterdata_jsonpath, '$..groupMemberstatus[?(@.auth)]');
+    $groupmemberauth = find_in_JSONPath($masterdata_jsonpath, '$.data.churchauth.groupMemberstatus[?(@.auth)]');
 
     $groupmissing = [];
     $groupauth = [];
@@ -685,9 +691,22 @@ function read_auth_by_groups(JsonObject $masterdata_jsonpath, array &$authdefini
     foreach ($groupmemberauth as &$authentry) {
         $hash = hash('md5', json_encode($authentry['auth']));
 
-        // ase we iterate throu groupmemberauth we can be sure there is an 'auth' Property
+        // ase we iterate through groupmemberauth we can be sure there is an 'auth' Property
         $auth = $authentry['auth'];
-        $group = find_one_in_JSONPath($masterdata_jsonpath, "$.data.churchauth.group.{$authentry['group_id']}");
+        $group_id = $authentry['group_id'];
+        $group = find_one_in_JSONPath($masterdata_jsonpath, "$.data.churchauth.group.{$group_id}");
+
+        // there are some zombie - entries in groupmemberauth table
+        // which refer to non existing (maybe deleted groups)
+        // confirmed by support
+        if (empty($group)) {
+            $groupmissing[$authentry['id']] = $authentry;
+            continue;
+        }
+
+        $permission_deep_no = $group['permission_deep_no'];
+
+        // echo ("p: $permission_deep_no");
         $resolved_authentry = [
             'group' => $group['bezeichnung'],
             'role' => find_one_in_JSONPath($masterdata_jsonpath,
@@ -696,25 +715,21 @@ function read_auth_by_groups(JsonObject $masterdata_jsonpath, array &$authdefini
             'groupMemberstatus_id' => $authentry['id'],
             'auth_hash' => $hash,
             'auth' => $auth,
-            'permission_deep_no' => $group['permission_deep_no'],
-            'resolved_auth' => resolve_auth_entry($auth, $masterdata_jsonpath, null, $group['permission_deep_no'])
+            'permission_deep_no' => $permission_deep_no,
+            'resolved_auth' => resolve_auth_entry($auth, $masterdata_jsonpath, null, $permission_deep_no)
         ];
 
 
-        if ($resolved_authentry['group'] == null) {
-            $groupmissing[$authentry['id']] = $authentry;
-        } else {
+        $groupname = $resolved_authentry['group'];
+        $role = "GRRL {$groupname} {$resolved_authentry['role']}";
+        $rolen = "GRRLN {$groupname}";
 
-            $groupname = $resolved_authentry['group'];
-            $role = "GRRL {$groupname} {$resolved_authentry['role']}";
-            $rolen = "GRRLN {$groupname}";
+        $authentry = $resolved_authentry;
+        pushauthdef($hash, $role, $rolen, $authentry['resolved_auth'], $authdefinitions);
+        pushauthdef($role, $rolen, $groupname, null, $pseudogroups);
 
-            $authentry = $resolved_authentry;
-            pushauthdef($hash, $role, $rolen, $authentry['resolved_auth'], $authdefinitions);
-            pushauthdef($role, $rolen, $groupname, null, $pseudogroups);
+        $groupauth[$resolved_authentry['group']][$resolved_authentry['role']] = $resolved_authentry;
 
-            $groupauth[$resolved_authentry['group']][$resolved_authentry['role']] = $resolved_authentry;
-        }
     }
     return array($groupmissing, $groupauth);
 }
