@@ -2,7 +2,6 @@
 
 I have pulled a fork to build it for my needs. There is not much in it yet, but it will come.
 
-
 * [x] Namespaces for Integration into other systems (Contao)
 * [x] Support of API V1 (ajax) as well as API V2 (REST)
     * Breaking change: It is a bit a problem that 'domain' already has the query in it.
@@ -13,9 +12,22 @@ I have pulled a fork to build it for my needs. There is not much in it yet, but 
 * [x] More documentation
 * [x] Improve Handling of the credentials
 
+# prerequisites
+
+a local php executable
+
+# usage
+
+1. clone this repo
+2. cd to `ctapishowcase`
+3. create `CT-credentialstore.php` from `CT-credentialstore.php.template`
+4. create the intendended outputfolder if you specify it in CT-credentialstore.php
+5. run `php ctcli.php {script}`, e.g. `php ctcli.php v1_churchauth--all`
+6. see the results in ouptufolder
+
 # CT-API-Tools
 
-PHP scripts, that make imports via the ChurchTools API or similar very easy.
+PHP scripts, that make imports via the ChurchTools API pretty easy.
 
 ## ct_apitools--helper.inc.php
 
@@ -28,7 +40,7 @@ Have a look, maybe I've already discovered, how some part of the API works. You 
 
 ### ctapishowcase
 
-This folder holds the experiments @bwl21 did with CT-API.
+This folder holds the experiments done by @bwl21
 
 see [readme](ctapishowcase/readme.md) for details
 
@@ -63,12 +75,6 @@ You want to subscribe two ical sources, but only have limited calenders booked @
 With the calendarmerger you can just host this file on a webserver, add your ical urls, you would like to subscribe to.
 Now you can add the URL to the webserver you are hosting this on (e.g. `https://my-super-cool-domain.tld/calendarmerger.php`) 
 to ChurchTools as an iCal source and voilá: CT shows both calendars as one.
-
-## ctgetallresourcebooking.php
-
-**untested**
-
-this generates the ressourcebookings of the day as html file - to be used for digital signeage.
 
 # More information
 

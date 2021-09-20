@@ -19,9 +19,15 @@ Please investigate the showcases to see the pattern applied:
 * we advise to place `responses` in a GIT of you own such that you can
   track changes.
 
-every showcase produces the following file
+every showcase produces at least the following file
 
 * {showcase}.response.json
+
+## v1-churchauth--all.php
+
+this generates repoprts about access rights in your instance. It furtheron creates a planuml and a graphml 
+file for your groups. Note that you need tools to visualize these files (plantuml.com), 
+[yed](https://yworks.com/products/yed)
 
 
 
