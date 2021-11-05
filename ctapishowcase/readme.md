@@ -1,5 +1,11 @@
 # This folder supports to generate a showcase
 
+## Prerequisites
+
+1. cteate a credential store
+
+   `cp ../CT-credentialstroe.php.template CT-credentialstore.php` 
+
 ## usasge
 
 ```
@@ -25,7 +31,7 @@ every showcase produces at least the following file
 
 ## v1-churchauth--all.php
 
-this generates repoprts about access rights in your instance. It furtheron creates a planuml and a graphml 
+this generates repoprts about access rights in your instance. It furtheron cre  ates a planuml and a graphml 
 file for your groups. Note that you need tools to visualize these files (plantuml.com), 
 [yed](https://yworks.com/products/yed)
 

@@ -2,6 +2,29 @@
 
 namespace CT_APITOOLS;
 
+
+// the template
+define("GRAPHMLTEPLATE", <<< EOT
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
+  <!--Created by yFiles for Java 2.9-->
+  <key for="graphml" id="d0" yfiles.type="resources"/>
+  <key for="port" id="d1" yfiles.type="portgraphics"/>
+  <key for="port" id="d2" yfiles.type="portgeometry"/>
+  <key for="port" id="d3" yfiles.type="portuserdata"/>
+  <key attr.name="url" attr.type="string" for="node" id="d4"/>
+  <key attr.name="description" attr.type="string" for="node" id="d5"/>
+  <key for="node" id="d6" yfiles.type="nodegraphics"/>
+  <key attr.name="Beschreibung" attr.type="string" for="graph" id="d7"/>
+  <key attr.name="url" attr.type="string" for="edge" id="d8"/>
+  <key attr.name="description" attr.type="string" for="edge" id="d9"/>
+  <key for="edge" id="d10" yfiles.type="edgegraphics"/>
+  <graph edgedefault="directed" id="G">
+  </graph>
+</graphml>
+EOT
+);
+
 /*
  * this showcase generats an json file which can b uses
  * to investigate the overall approach of access rights
@@ -260,7 +283,6 @@ EOT;
 
 
             $n_data = $n_node->addChild('data');
-            $n_data['key'] = $group['id'];
             $n_data['key'] = 'd6';
 
 
@@ -284,7 +306,7 @@ EOT;
 //    n_data_5 << "#{group['desc']}"
 //
 //
-            $content = str_replace("&", "&amp;", $group['desc']);
+            $content = encodexmlentities($group['desc']);
             $n_data_5 = $n_node->addChild('data', $content);
             $n_data_5['key'] = 'd5';
             $n_data_5["xml:space"] = "preserve";
@@ -299,7 +321,7 @@ EOT;
 //    n_NodeLabel.content = "[#{group_type[:prefix]}] #{group['name']} (#{id})"
 //    n_NodeLabel.content = "#{group['name']} (#{id})"
 //
-            $content = str_replace("&", "&amp;", "{$group['name']} ({$group['id']})");
+            $content = encodexmlentities("{$group['name']} ({$group['id']})");
             $n_shapenode->addChild('NodeLabel', $content, "http://www.yworks.com/xml/graphml");
 
 //    n_Geometry          = Nokogiri::XML::Node.new "y:Geometry", doc
@@ -307,7 +329,8 @@ EOT;
 //
 
             $n_geometry = $n_shapenode->addChild('Geometry', "", "http://www.yworks.com/xml/graphml");
-            $n_geometry['width'] = "280";  // 40 * 7
+            $n_geometry['width'] = "350";  // 40 * 7
+            $n_geometry['height'] = "75";  // 40 * 7
 
 //    n_Shape         = Nokogiri::XML::Node.new "y:Shape", doc
 //    n_Shape["type"] = group_type[:shape] || TYPECOLORS[0][:shape]
@@ -923,6 +946,51 @@ function invert_whocanwhat($whocanwhat)
     return $result;
 }
 
+/**
+ * attempt to derive the similiarity of two arrays
+ *
+ * @param $a
+ * @param $b
+ * @return array
+ */
+function array_synergy($a, $b)
+{
+
+    $common = array_intersect($a, $b);
+    $amissing = array_values(array_diff($a, $common));
+    $bmissing = array_values(array_diff($b, $common));
+
+    $resultab = 0;
+    foreach ($a as $cand) {
+        if (!in_array($cand, $b)) {
+            $resultab += 1;
+        }
+    }
+    $resultba = 0;
+    foreach ($b as $cand) {
+        if (!in_array($cand, $a)) {
+            $resultba += 1;
+        }
+    }
+
+
+    return [
+        "a->b" => $resultab,
+        "b->a" => $resultba,
+        "common" => $common,
+        "amissing" => $amissing,
+        "bmissing" => $bmissing
+    ];
+}
+
+/**
+ * find possible roles in whatcanwo
+ *
+ * eventually all zgf - groups provide roles
+ *
+ * @param $whatcanwho
+ * @return array
+ */
 function find_roles_in_whatcanwho($whatcanwho)
 {
     $result = [];
@@ -931,32 +999,153 @@ function find_roles_in_whatcanwho($whatcanwho)
     sort($whatcanwhokeys);
 
     foreach ($whatcanwhokeys as $whatcanwhokey) {
-
         $who = $whatcanwhokey;
         $grant = $whatcanwho[$whatcanwhokey];
 
-        // find other grantees with the same or more grants
         foreach ($whatcanwhokeys as $whoelse) {
+            if ($who == $whoelse) {
+                continue;
+            }
             $grantelse = $whatcanwho[$whoelse];
-            if (empty(array_diff($grant, $grantelse))) {
-                if (!array_key_exists($who, $result)) {
-                    $result[$who] = [];
-                    $result[$who]['kann'] = $grant;
-                    $result[$who]['wie auch'] = [];
-                }
-                if ($who !== $whoelse) {
+            $compare = array_synergy($grantelse, $grant);
+            $common = $compare["common"];
+            $lessprovided = $compare['bmissing'];
+            $moreprovided = $compare['amissing'];
 
-                    $c1 = count($grantelse);
-                    $c2 = count($grant);
-                    $diff = $c1 - $c2;
-                    $result[$who]['wie auch'][] = "$whoelse  (+ $diff)";
+
+            $commoncount = count($common);
+            $grantcount = count($grant);
+            $grantelsecount = count($grantelse);
+
+            $lesscount = count($lessprovided);
+            $morecount = count($moreprovided);
+
+            // we consider as similar, if
+            // there are more than 3 common
+            // and less than 5 additions
+            $mincommon = 3;
+            $maxmore = 5;
+            $maxless = 300; // using less did not work properly
+
+            if (($commoncount >= $mincommon) and ($lesscount <= $maxless) and ($morecount <= $maxmore)) {
+                if (!array_key_exists($who, $result)) {
+                    $result[$who] = ["kann" => $grant, "vergleich" => []];
+                }
+                $result[$who]['vergleich'][$whoelse] = [
+                    "numbers" => " $lesscount weniger ; $commoncount gemeinsam ; $morecount mehr ; $grantcount insgesamt",
+                    "als" => $whatcanwhokey,
+                ];
+                $result[$who]['vergleich'][$whoelse]["common"] = $common;
+                if ($lesscount < $maxless) {
+                    {
+                        if (!empty($lessprovided)) {
+                            $result[$who]['vergleich'][$whoelse]["missing"] = $lessprovided;
+                        }
+                    }
+                }
+                if (!empty($moreprovided)) {
+                    $result[$who]['vergleich'][$whoelse]["more"] = $moreprovided;
                 }
             }
         }
     }
 
-    // c
-    return $result;
+    return ($result);
+}
+
+function create_graphml_for_roles($similarities)
+{
+    $style = ["ZGF" => [
+     'color' => "green"
+    ]];
+
+    $doc = simplexml_load_string(GRAPHMLTEPLATE);
+    $graph = $doc->graph[0];
+
+    $nodeid = 1; // running ocunter for id of nodes
+    $nodes = [];  // to generate index of nodes
+
+    // create node ids
+    foreach ($similarities as $fromkey => $similarity) {
+        $nodes[$fromkey] = ++$nodeid;
+        foreach ($similarity['vergleich'] as $tokey => $compare) {
+            $nodes[$tokey] = ++$nodeid;
+        }
+    }
+
+    // create the nodes
+    foreach ($nodes as $key => $nodeid) {
+
+        $groupcolor = (strpos($key, 'ZGF') !== false)? '#00ff00': '#0000ff';
+
+        $n_node = $graph->addChild("node");
+        $n_node['id'] = $nodeid;  // id is the graphml id
+
+        $n_data = $n_node->addChild('data');
+        $n_data['key'] = 'd6';
+
+        $n_shapenode = $n_data->addChild('y:ShapeNode', null, "http://www.yworks.com/xml/graphml");
+
+        $content = encodexmlentities($key);
+        $n_shapenode->addChild('NodeLabel', $content, "http://www.yworks.com/xml/graphml");
+
+        $n_fill = $n_shapenode->addChild("Fill", null, "http://www.yworks.com/xml/graphml");
+        $n_fill['color'] = $groupcolor;
+
+        $n_geometry = $n_shapenode->addChild('Geometry', "", "http://www.yworks.com/xml/graphml");
+        $n_geometry['width'] = "400";  // 40 * 7
+        $n_geometry['height'] = "400";  // 40 * 7
+    }
+
+    //var_dump($doc);
+    // crate edghes
+    foreach ($similarities as $fromkey => $similarity) {
+        foreach ($similarity['vergleich'] as $tokey => $compare) {
+            $n_edge = $graph->addChild('edge');
+            $n_edge['source'] = $nodes[$fromkey];
+            $n_edge['target'] = $nodes[$tokey];
+            $n_edge['id'] = "{$nodes[$fromkey]}_{$nodes[$tokey]}";
+
+            // add edge description
+            $the_content = "$tokey\n";
+            $the_content .= encodexmlentities(json_encode($compare, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $n_data = $n_edge->addChild('data', "<pre>$the_content</pre>");
+            $n_data['key'] = 'd9';
+            $n_data["xml:space"] = "preserve";
+
+            $n_data = $n_edge->addChild('data');
+            $n_data['key'] = 'd10';
+
+            $n_PolyLineEdge = $n_data->addChild('y:PolyLineEdge', null, "http://www.yworks.com/xml/graphml");
+
+            $n_arrows = $n_PolyLineEdge->addChild('y:Arrows', null, "http://www.yworks.com/xml/graphml");
+            $n_arrows['source'] = "none";
+            $n_arrows['target'] = "white_delta";
+
+            if (!array_key_exists('missing', $compare)) {
+                $n_linestyle = $n_PolyLineEdge->addChild('y:LineStyle', null, "http://www.yworks.com/xml/graphml");
+                if (!array_key_exists('more', $compare)) {
+                    $n_linestyle['color'] = "#00ff00";
+                    $n_linestyle['width'] = "2.0";
+                } else {
+                    $n_linestyle['color'] = "#ff0000";
+                }
+
+            }
+        }
+    }
+
+    // return the xml
+    return ($doc->asXML());
+}
+
+/**
+ * @param $key
+ * @return string
+ */
+function encodexmlentities($key): string
+{
+    return str_replace("&", "&amp;", $key);
 }
 
 /**
@@ -1227,4 +1416,26 @@ $miscreport['whatcanhwo'] = $whatcanwho;
 $miscreport['whoelse'] = $whoelse;
 fwrite($miscjsonfile, json_encode($miscreport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 fclose($miscjsonfile);
+
+// write misc graphml to find roles
+
+$miscgraphmlfile = fopen("$filebase.misc.graphml", "w");
+fwrite($miscgraphmlfile, create_graphml_for_roles($miscreport['whoelse']));
+fclose($miscgraphmlfile);
+
+// writing translations
+echo "reading translations\n";
+$report5 = [
+    'url' => $ctdomain . '/?q=churchtranslate/ajax',
+    // this was wrong 'url' => $ctdomain . '/?q=churchdb/ajax',
+
+    'method' => "POST",
+    'data' => ['func' => 'getMasterData'],
+    'response' => "???"
+];
+$report5['response'] = CTV1_sendRequest($ctdomain, $report5['url'], $report5['data']);
+
+$translationfile = fopen("$filebase.translation.json", "w");
+fwrite($translationfile, json_encode($report5['response']['data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+fclose($translationfile);
 
