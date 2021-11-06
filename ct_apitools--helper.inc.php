@@ -74,7 +74,8 @@ function find_one_in_JSONPath(&$masterdata, $jsonpath)
  * @return JsonObject
  * @throws \JsonPath\InvalidJsonException
  */
-function create_JSONPath($masterdata){
+function create_JSONPath($masterdata)
+{
     return new JSONObject($masterdata);
 }
 
@@ -232,7 +233,11 @@ function _getCSRFToken($url)
     }
 
     $result = CTV2_sendRequest("GET", "https://$domain/api/csrftoken", array(), array());
-    // toto handle failure
+    if (is_string($result)) {
+        echo ("login failed");
+        var_dump($result);
+        die;
+    }
     $token[$domain] = $result['data'];
     return $token[$domain];
 }
@@ -432,8 +437,7 @@ function CTV2_sendRequestWithPagination(array $report)
     if (array_key_exists('lastpage', $report['data'])) {
         $lastpage = min($report['data']['lastpage'], $report['data']['page']);
         $requestedlastpage = $lastpage;
-    }
-    else{
+    } else {
         $lastpage = $report['data']['page'];
         $requestedlastpage = 1000000;
     }
@@ -453,70 +457,70 @@ function CTV2_sendRequestWithPagination(array $report)
     return $response;
 }
 
-    /**
-     *
-     * login to Churchtools using an access token
-     *
-     * note that the login is valid as long as the script runs. The session is
-     * not preserverd oveer multiple invocations (as the cookies are not saved)
-     *
-     * @param $domain
-     * @param $token
-     * @param $id
-     * @return bool
-     */
-    function CT_login($domain, $token, $id)
-    {
-        $url = $domain . 'login/ajax';
+/**
+ *
+ * login to Churchtools using an access token
+ *
+ * note that the login is valid as long as the script runs. The session is
+ * not preserverd oveer multiple invocations (as the cookies are not saved)
+ *
+ * @param $domain
+ * @param $token
+ * @param $id
+ * @return bool
+ */
+function CT_login($domain, $token, $id)
+{
+    $url = $domain . 'login/ajax';
 
-        // Now use token to login
-        $data = array(
-            'func' => 'loginWithToken',
-            'token' => $token,
-            'id' => $id,
-            'directtool' => 'API Tools'
-        );
-        $result = CTV1_sendRequest($domain, $url, $data, false);
-        return $result;
-    }
+    // Now use token to login
+    $data = array(
+        'func' => 'loginWithToken',
+        'token' => $token,
+        'id' => $id,
+        'directtool' => 'API Tools'
+    );
+    $result = CTV1_sendRequest($domain, $url, $data, false);
+    return $result;
+}
 
 
-    /**
-     *
-     * login to Churchtools using credentials
-     *
-     * note that the login is valid as long as the script runs. The session is
-     * not preserverd oveer multiple invocations (as the cookies are not saved)
-     *
-     * @param $domain
-     * @param $email    username or email
-     * @param $pw       password
-     * @return Array 'status' => 'success'| 'fail'
-     */
-    function CT_loginAuth($domain, $email, $pw)
-    {
-        $url = $domain . '/?q=login/ajax';
+/**
+ *
+ * login to Churchtools using credentials
+ *
+ * note that the login is valid as long as the script runs. The session is
+ * not preserverd oveer multiple invocations (as the cookies are not saved)
+ *
+ * @param $domain
+ * @param $email    username or email
+ * @param $pw       password
+ * @return Array 'status' => 'success'| 'fail'
+ */
+function CT_loginAuth($domain, $email, $pw)
+{
+    $url = $domain . '/?q=login/ajax';
 
-        // Now use creds to login
-        $data = array(
-            'func' => 'login',
-            'email' => $email,
-            'password' => $pw,
-            'directtool' => 'API Tools'
-        );
-        $result = CTV1_sendRequest($domain, $url, $data, false);
-        return ($result);
-    }
+    // Now use creds to login
+    $data = array(
+        'func' => 'login',
+        'email' => $email,
+        'password' => $pw,
+        'directtool' => 'API Tools'
+    );
+    $result = CTV1_sendRequest($domain, $url, $data, false);
+    return ($result);
+}
 
-    /**
-     * terminate the current sessio
-     *
-     * @param $domain
-     */
-    function CT_logout($domain)
-    {
-        $url = $domain . '/?q=login/ajax';
+/**
+ * terminate the current sessio
+ *
+ * @param $domain
+ */
+function CT_logout($domain)
+{
+    $url = $domain . '/?q=login/ajax';
 
-        $data = array('func' => 'logout');
-        $result = CTV1_sendRequest($domain, $url, $data);
-    }
+    $data = array('func' => 'logout');
+    $result = CTV1_sendRequest($domain, $url, $data);
+}
