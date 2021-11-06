@@ -51,6 +51,7 @@ use JsonSerializable;
  */
 class GroupHierarchy implements JsonSerializable
 {
+    public $ctbaseurl = "";
     private $groups = [];    // details of groups index = group id
     private $hierarchy = [];  // hierarchy index = group id
     private $hierarchyvalid = false;  // indcate if
@@ -101,7 +102,7 @@ class GroupHierarchy implements JsonSerializable
 
         if (array_key_exists($name, $this->groupids)) {
             // todo error mehtdeutige Gruppenname
-            echo "ERROR: Gruppenname '$name' ist mehfach verwendet";
+            echo "ERROR: Gruppenname '$name' ist mehrfach verwendet\n";
         }
 
         $this->groups[$id] = [
@@ -137,7 +138,7 @@ class GroupHierarchy implements JsonSerializable
                         $result = $this->groupids["$groupname"];
                     } else {
                         echo("ERROR missing group: $groupname\n");
-                        $result = "$groupname";
+                        $result = $this->groupids["MISSING Parent"];
                     }
                 }
                 return $result;
@@ -174,13 +175,16 @@ class GroupHierarchy implements JsonSerializable
         foreach ($this->groups as $group) {
             $parents = $this->hierarchy["{$group['id']}"];
             $parents = empty($parents) ? [0] : $parents;
-            $me = $group['name'];
+            $source = escapedquotes($group['name']);
+
 
             foreach ($parents as $parent) {
                 $arrow = $arrows[$i++];
                 $i = ($i > 3) ? 0 : $i;
+
                 if (array_key_exists("$parent", $this->groups)) {
-                    $result[] = "\"$me\" $arrow \"{$this->groups["$parent"]["name"]}\"";
+                    $target = escapedquotes($this->groups["$parent"]["name"]);
+                    $result[] = "\"$source\" $arrow \"{$target}\"";
                 }
             }
         }
@@ -285,42 +289,24 @@ EOT;
             $n_data = $n_node->addChild('data');
             $n_data['key'] = 'd6';
 
-
-//    n_data_4              = Nokogiri::XML::Node.new "data", doc
-//    n_data_4["key"]       = "d4"
-//    n_data_4["xml:space"] = "preserve"
-//    n_data_4 << "https://bgkorntal.church.tools/?q=churchdb#/GroupView/searchEntry:#{URI.escape(group['name'])}"
-//
-
             $content = urlencode($group['name']);
             $content = str_replace("+", "%20", $content);  // replace "+" for churchtools url
             $n_data_4 = $n_node->addChild('data',
-                "https://bgkorntal.church.tools/?q=churchdb#/GroupView/searchEntry:$content");
+                "{$this->ctbaseurl}/?q=churchdb#/GroupView/searchEntry:$content");
             $n_data_4['key'] = 'd4';
             $n_data_4["xml:space"] = "preserve";
 
 
-//    n_data_5              = Nokogiri::XML::Node.new "data", doc
-//    n_data_5["key"]       = "d5"
-//    n_data_5["xml:space"] = "preserve"
-//    n_data_5 << "#{group['desc']}"
-//
-//
             $content = encodexmlentities($group['desc']);
             $n_data_5 = $n_node->addChild('data', $content);
             $n_data_5['key'] = 'd5';
             $n_data_5["xml:space"] = "preserve";
 
 
-//    n_ShapeNode = Nokogiri::XML::Node.new "y:ShapeNode", doc
-//    n_NodeLabel = Nokogiri::XML::Node.new "y:NodeLabel", doc
-
 
             $n_shapenode = $n_data->addChild('y:ShapeNode', null, "http://www.yworks.com/xml/graphml");
 
-//    n_NodeLabel.content = "[#{group_type[:prefix]}] #{group['name']} (#{id})"
-//    n_NodeLabel.content = "#{group['name']} (#{id})"
-//
+
             $content = encodexmlentities("{$group['name']} ({$group['id']})");
             $n_shapenode->addChild('NodeLabel', $content, "http://www.yworks.com/xml/graphml");
 
@@ -569,6 +555,9 @@ function reportauthasmd($definition, $indent = "")
 function read_auth_by_status($masterdata_jsonpath, array &$authdefinitions, array &$pseudogroups): array
 {
     $statuus = find_in_JSONPath($masterdata_jsonpath, '$..churchauth.status.*');
+    if (empty($statuus)){
+        $statuus = [];
+    }
     $statusauth = [];  // here we collect the groptype auths
 
     foreach ($statuus as $status) {
@@ -610,6 +599,9 @@ function read_auth_by_status($masterdata_jsonpath, array &$authdefinitions, arra
 function read_auth_by_grouptypes(JsonObject $masterdata_jsonpath, array &$authdefinitions, array &$pseudogroups): array
 {
     $grouptypes = find_in_JSONPath($masterdata_jsonpath, '$.data.churchauth.cdb_gruppentyp.*');
+    if (empty($groutypes)){
+        $grouptypes = [];
+    }
 
     $grouptypeauth = [];  // here we collect the groptype auths
 
@@ -665,6 +657,9 @@ function read_auth_by_person($masterdata_jsonpath, array &$authdefinitions, arra
     $personauth = [];
 
     $personauths = find_in_JSONPath($masterdata_jsonpath, '$..person[?(@.auth)]');
+    if (empty($personauths)){
+        $personauths = [];
+    }
 
     foreach ($personauths as $authentry) {
         $authdefinition = $authentry['auth'];
@@ -707,6 +702,9 @@ function read_auth_by_groups(JsonObject $masterdata_jsonpath, array &$authdefini
     //$groups = find_in_JSONPath($masterdata_jsonpath,'$..groups.*');
 
     $groupmemberauth = find_in_JSONPath($masterdata_jsonpath, '$.data.churchauth.groupMemberstatus[?(@.auth)]');
+    if (empty($groupmemberauth)){
+        $groupmemberauth = [];
+    }
 
     $groupmissing = [];
     $groupauth = [];
@@ -1149,6 +1147,15 @@ function encodexmlentities($key): string
 }
 
 /**
+ * @param $input
+ * @return string
+ */
+function escapedquotes($input): string
+{
+    return str_replace( "\"", "'", $input);
+}
+
+/**
  *
  * push auth for a given grantee to the authcollection
  *
@@ -1262,7 +1269,11 @@ list($groupmissing, $groupauth) = read_auth_by_groups($masterdata_jsonpath, $aut
 //
 
 $grouphierarchy = new GroupHierarchy();
+$grouphierarchy->ctbaseurl = $ctdomain;
+
 $grouphierarchy->setgrouptypedefs($grouptypedefs);
+
+$grouphierarchy->add("MISSING Parent");
 
 // reading groups
 echo "creading groups\n";
