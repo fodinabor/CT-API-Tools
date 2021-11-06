@@ -7,6 +7,8 @@ namespace CT_APITOOLS;
 
 use Cassandra\Exception\RangeException;
 
+ini_set('memory_limit', "256M");
+
 require 'vendor/autoload.php';
 
 require_once __DIR__ . "/../ct_apitools--helper.inc.php";
@@ -62,6 +64,11 @@ foreach ($showcases as $showcase) {
 
     $showcasebase = basename($showcase, ".php");
     $outfolder = array_key_exists('outfolder', CREDENTIALS) ? CREDENTIALS['outfolder'] : __DIR__ . "/responses";
+
+    if (!is_dir($outfolder)) {
+        echo ("\ncreating $outfolder");
+        mkdir($outfolder, 0777 ,true);
+    }
 
     // note there is no separator between ctinstance and showcasebase
     // to support filename built of showcasebase only (without mentioning the ctinstance)
