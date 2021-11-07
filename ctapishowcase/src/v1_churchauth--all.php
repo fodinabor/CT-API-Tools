@@ -568,7 +568,7 @@ function read_auth_by_status($masterdata_jsonpath, array &$authdefinitions, arra
 function read_auth_by_grouptypes(JsonObject $masterdata_jsonpath, array &$authdefinitions, array &$pseudogroups): array
 {
     $grouptypes = find_in_JSONPath($masterdata_jsonpath, '$.data.churchauth.cdb_gruppentyp.*');
-    if (empty($groutypes)) {
+    if (empty($grouptypes)) {
         $grouptypes = [];
     }
 
