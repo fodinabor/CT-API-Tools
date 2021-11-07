@@ -180,7 +180,7 @@ class GroupHierarchy implements JsonSerializable
             $parents = empty($parents) ? [0] : $parents;
             $source = escapedquotes($group['name']);
 
-            if ($this->ignorebyGrouptype($group['type'])){
+            if ($this->ignorebyGrouptype($group['type'])) {
                 continue;
             }
 
@@ -191,7 +191,7 @@ class GroupHierarchy implements JsonSerializable
 
                 if (array_key_exists("$parent", $this->groups)) {
                     $targettype = $this->groups["$parent"]["type"];
-                    if ($this->ignorebyGrouptype($targettype)){
+                    if ($this->ignorebyGrouptype($targettype)) {
                         continue;
                     }
 
@@ -1333,9 +1333,12 @@ $grouphierarchy->add("ST Status", ["GL Globale Rechte"]);
 $filebase = $outfilebase;
 
 echo "create rubysimulation\n";
+// this adds the pseudonodes
 create_rubysimulationfile($authdefinitions + $pseudogroups,
     "$filebase.rb",
     $grouphierarchy);
+
+$grouphierarchy->buildhierarchy();
 
 echo "create markdown report\n";
 create_markdownreport($authdefinitions,
@@ -1352,26 +1355,26 @@ if (array_key_exists('extracts', CREDENTIALS)) {
     $extracts = CREDENTIALS['extracts'];
 } else {
     $extracts = [
-        '' => ['groupidstoignore' => [[-10000, -1], [6, 6]]],
+        '' => ['grouptypeidstoignore' => []]
     ];
 }
 
 // create graphic extracts.
-foreach ($extracts as $extractname => $extract){
-    $grouptypestoignore = $extract['groupidstoignore'];
+foreach ($extracts as $extractname => $extract) {
+    $grouptypestoignore = $extract['grouptypeidstoignore'];
 
     // write graphmlfile
     $graphmlfilename = "$filebase$extractname.graphml";
-    echo ("writing $graphmlfilename " . json_encode($grouptypestoignore) . "\n");
+    echo("writing $graphmlfilename " . json_encode($grouptypestoignore) . "\n");
 
-    $graphmlfile = fopen("$filebase$extractname.graphml", "w");
-    $grouphierarchy->groupidstoignore = $extract['groupidstoignore'];
+    $graphmlfile = fopen($graphmlfilename, "w");
+    $grouphierarchy->groupidstoignore = $grouptypestoignore;
     fwrite($graphmlfile, $grouphierarchy->tographml());
     fclose($graphmlfile);
 
     // write puml file
     $pumlfilename = "$filebase$extractname.puml";
-    echo ("writing $pumlfilename " . json_encode($grouptypestoignore) . "\n");
+    echo("writing $pumlfilename " . json_encode($grouptypestoignore) . "\n");
     $pumlfile = fopen("$pumlfilename", "w");
     fwrite($pumlfile, $grouphierarchy->toplantuml());
     fclose($pumlfile);
