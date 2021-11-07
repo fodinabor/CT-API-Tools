@@ -52,6 +52,8 @@ use JsonSerializable;
 class GroupHierarchy implements JsonSerializable
 {
     public $ctbaseurl = "";
+    public $groupidstoignore = [];   // groupids to be ignored
+
     private $groups = [];    // details of groups index = group id
     private $hierarchy = [];  // hierarchy index = group id
     private $hierarchyvalid = false;  // indcate if
@@ -71,7 +73,7 @@ class GroupHierarchy implements JsonSerializable
         if (array_key_exists($prefix, $this->grouptypedefs)) {
             return ($this->grouptypedefs[$prefix]['id']);
         }
-        return (0);
+        return (-1);
     }
 
     /**
@@ -101,7 +103,7 @@ class GroupHierarchy implements JsonSerializable
             $extra["type"] : $this->getgrouptypebyname($name);  // todo proper handling of group types
 
         if (array_key_exists($name, $this->groupids)) {
-            // todo error mehtdeutige Gruppenname
+            // todo error mehrdeutige Gruppenname
             echo "ERROR: Gruppenname '$name' ist mehrfach verwendet\n";
         }
 
@@ -169,6 +171,7 @@ class GroupHierarchy implements JsonSerializable
         // write groups
         // write edges
 
+        // various length of arraors improve layout
         $arrows = ["-up-|>", "-up---|>", "-up----|>", "-up-----|>"];
         $this->buildhierarchy();
         $i = 0;
@@ -177,12 +180,21 @@ class GroupHierarchy implements JsonSerializable
             $parents = empty($parents) ? [0] : $parents;
             $source = escapedquotes($group['name']);
 
+            if ($this->ignorebyGrouptype($group['type'])){
+                continue;
+            }
 
             foreach ($parents as $parent) {
+
                 $arrow = $arrows[$i++];
-                $i = ($i > 3) ? 0 : $i;
+                $i = ($i > 3) ? 0 : $i;  // this is to selec the arrow length
 
                 if (array_key_exists("$parent", $this->groups)) {
+                    $targettype = $this->groups["$parent"]["type"];
+                    if ($this->ignorebyGrouptype($targettype)){
+                        continue;
+                    }
+
                     $target = escapedquotes($this->groups["$parent"]["name"]);
                     $result[] = "\"$source\" $arrow \"{$target}\"";
                 }
@@ -192,191 +204,24 @@ class GroupHierarchy implements JsonSerializable
         $result[] = "@enduml";
 
         return join("\n", $result);
-
-        /*
-  result = groups_hash.map do |id, group|
-    parents = hierarchy_hash[group['id']]
-    parents = [0] if parents.nil?
-        parents = [0] if parents.empty?
-    parents = parents.map do |i|
-    thegroup = groups_hash[i]
-      if group
-      "#{i}:#{thegroup['name']}" rescue nil
-      else
-        $log.log("ERROR", "Gruppe #{i} nicht definiert")
-      end
-    end.compact
-    require 'pry'
-    me = %{#{group['id']}:#{groups_hash[group['id']]['name']}} rescue binding.pry;
-        parents.map { |parentname| %Q{"#{me}" -up-|> "#{parentname}" } }
-  end
-end*/
     }
 
     /**
      * export hierarhy as graphml
      */
-    function tographml()
+    function tographml($pattern = "/.*/")
     {
 
         // the template
-        $template = <<< EOT
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:y="http://www.yworks.com/xml/graphml" xmlns:yed="http://www.yworks.com/xml/yed/3" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd">
-  <!--Created by yFiles for Java 2.9-->
-  <key for="graphml" id="d0" yfiles.type="resources"/>
-  <key for="port" id="d1" yfiles.type="portgraphics"/>
-  <key for="port" id="d2" yfiles.type="portgeometry"/>
-  <key for="port" id="d3" yfiles.type="portuserdata"/>
-  <key attr.name="url" attr.type="string" for="node" id="d4"/>
-  <key attr.name="description" attr.type="string" for="node" id="d5"/>
-  <key for="node" id="d6" yfiles.type="nodegraphics"/>
-  <key attr.name="Beschreibung" attr.type="string" for="graph" id="d7"/>
-  <key attr.name="url" attr.type="string" for="edge" id="d8"/>
-  <key attr.name="description" attr.type="string" for="edge" id="d9"/>
-  <key for="edge" id="d10" yfiles.type="edgegraphics"/>
-  <graph edgedefault="directed" id="G">
-  </graph>
-</graphml>
-EOT;
+        $template = GRAPHMLTEPLATE;
 
         $doc = simplexml_load_string($template);
 
-//
-//  groups_hash, hierarchy_hash = groupdatatohash(groups, hierarchy)
-//  #groups_hash[0]              = { 'id' => 0, 'name' => "ROOT" }
-//
-//  graph = doc.xpath("//xmlns:graph").first
-//
         $graph = $doc->graph[0];
 
-//  # generate all nodes
-//  groups_hash.each do |id, group|
+        $this->tographml_groups($graph);
+        $this->tographml_edges($graph);
 
-        foreach ($this->groups as $group) {
-
-//        prefix     = group['name'].split(" ").first
-//    group_type = TYPECOLORS[get_groupType_in_group(group)] ||
-//        TYPECOLORS[prefix] ||
-//        TYPECOLORS[0]
-//
-
-            // find grouptype def by id
-            $grouptype = array_key_exists($group['type'],
-                $this->grouptypedefs) ? $this->grouptypedefs[$group['type']] : null;
-
-            // find grouptype def by prefix
-            $prefix = $this->getprefix($group['name']);
-            if (!isset($grouptype)) {
-                $grouptype = array_key_exists($prefix,
-                    $this->grouptypedefs) ? $this->grouptypedefs[$prefix] : null;
-            }
-            if (!isset($grouptype)) {
-                $grouptype = $this->grouptypedefs[0];
-            }
-
-//    n_node       = Nokogiri::XML::Node.new "node", doc
-//    n_node["id"] = id
-            $n_node = $graph->addChild("node");
-            $n_node['id'] = $group['id'];
-
-//
-//    n_data        = Nokogiri::XML::Node.new "data", doc
-//    n_data["key"] = "d6"
-//
-
-
-            $n_data = $n_node->addChild('data');
-            $n_data['key'] = 'd6';
-
-            $content = urlencode($group['name']);
-            $content = str_replace("+", "%20", $content);  // replace "+" for churchtools url
-            $n_data_4 = $n_node->addChild('data',
-                "{$this->ctbaseurl}/?q=churchdb#/GroupView/searchEntry:$content");
-            $n_data_4['key'] = 'd4';
-            $n_data_4["xml:space"] = "preserve";
-
-
-            $content = encodexmlentities($group['desc']);
-            $n_data_5 = $n_node->addChild('data', $content);
-            $n_data_5['key'] = 'd5';
-            $n_data_5["xml:space"] = "preserve";
-
-
-
-            $n_shapenode = $n_data->addChild('y:ShapeNode', null, "http://www.yworks.com/xml/graphml");
-
-
-            $content = encodexmlentities("{$group['name']} ({$group['id']})");
-            $n_shapenode->addChild('NodeLabel', $content, "http://www.yworks.com/xml/graphml");
-
-//    n_Geometry          = Nokogiri::XML::Node.new "y:Geometry", doc
-//    n_Geometry['width'] = "#{40 * 7}"  # estimated length of title
-//
-
-            $n_geometry = $n_shapenode->addChild('Geometry', "", "http://www.yworks.com/xml/graphml");
-            $n_geometry['width'] = "350";  // 40 * 7
-            $n_geometry['height'] = "75";  // 40 * 7
-
-//    n_Shape         = Nokogiri::XML::Node.new "y:Shape", doc
-//    n_Shape["type"] = group_type[:shape] || TYPECOLORS[0][:shape]
-
-            $n_shape = $n_shapenode->addChild('Shape', null, "http://www.yworks.com/xml/graphml");
-            $n_shape['type'] = $grouptype['shape'];
-            //var_dump($grouptype);die;
-
-//
-//    n_Fill          = Nokogiri::XML::Node.new "y:Fill", doc
-//    n_Fill['color'] = group_type[:color] || TYPECOLORS[0][:color]
-
-            $n_fill = $n_shapenode->addChild("Fill", null, "http://www.yworks.com/xml/graphml");
-            $n_fill['color'] = $grouptype['color'];
-
-//
-//    n_ShapeNode << n_NodeLabel
-//    n_ShapeNode << n_Geometry
-//    n_ShapeNode << n_Fill
-//    n_ShapeNode << n_Shape
-//
-//    n_data << n_ShapeNode
-//    n_node << n_data
-//    n_node << n_data_4
-//    n_node << n_data_5
-//    graph << n_node
-//
-        }
-
-///// expose edges
-///
-
-        foreach ($this->hierarchy as $meid => $parentids) {
-            $parents = empty($parentids) ? ['0'] : $parentids;
-
-            foreach ($parents as $parent) {
-                if ($parent == '0') {
-                    continue;
-                }
-                $n_edge = $graph->addChild('edge');
-                $n_edge['source'] = $meid;
-                $n_edge['target'] = $parent;
-                $n_edge['id'] = "{$meid}_$parent";
-            }
-        }
-
-//    parents = hierarchy_hash[id]
-//    parents = [0] if parents.nil?
-//            parents = [0] if parents.empty?
-//    parents.each do |up|
-//        n_edge           = Nokogiri::XML::Node.new "edge", doc
-//      n_edge["source"] = id
-//      n_edge["target"] = up
-//      n_edge["id"]     = "#{up}_#{id}"
-//      if (!up.nil?) && (up > 0)
-//        graph << n_edge
-//      end
-//    end
-//  end
-//  xp(doc)
         return ($doc->asXML());
     }
 
@@ -390,6 +235,130 @@ EOT;
     {
         $this->buildhierarchy();
         return get_object_vars($this);
+    }
+
+    /**
+     * @param $graph
+     */
+    private function tographml_groups($graph): void
+    {
+        foreach ($this->groups as $group) {
+
+            if (!array_key_exists('type', $group)) {
+                var_dump($group);
+                die("this should not happen in line" . __LINE__);
+            }
+            $grouptypeid = array_key_exists('type', $group) ? $group['type'] : null;
+
+            if ($this->ignorebyGrouptype($grouptypeid)) {
+                continue;
+            }
+
+            // find grouptype def by id
+            $grouptype = array_key_exists($group['type'], $this->grouptypedefs)
+                ? $this->grouptypedefs[$group['type']] : null;
+
+
+            // find grouptype def by prefix
+            $prefix = $this->getprefix($group['name']);
+            if (!isset($grouptype)) {
+                $grouptype = array_key_exists($prefix,
+                    $this->grouptypedefs) ? $this->grouptypedefs[$prefix] : null;
+            }
+
+            // otherwise take the first defined type
+            if (!isset($grouptype)) {
+                $grouptype = $this->grouptypedefs[0];
+            }
+
+
+            // add the node
+            $n_node = $graph->addChild("node");
+            $n_node['id'] = $group['id'];
+
+            // add group name
+            $n_data = $n_node->addChild('data');
+            $n_data['key'] = 'd6';
+
+            $content = urlencode($group['name']);
+            $content = str_replace("+", "%20", $content);  // replace "+" for churchtools url
+            $n_data_4 = $n_node->addChild('data', "{$this->ctbaseurl}/?q=churchdb#/GroupView/searchEntry:$content");
+            $n_data_4['key'] = 'd4';
+            $n_data_4["xml:space"] = "preserve";
+
+            // add group content / descriptoin
+            $content = encodexmlentities($group['desc']);
+            $n_data_5 = $n_node->addChild('data', $content);
+            $n_data_5['key'] = 'd5';
+            $n_data_5["xml:space"] = "preserve";
+
+            // add shape label
+            $n_shapenode = $n_data->addChild('y:ShapeNode', null, "http://www.yworks.com/xml/graphml");
+            $content = encodexmlentities("{$group['name']} ({$group['id']})");
+            $n_shapenode->addChild('NodeLabel', $content, "http://www.yworks.com/xml/graphml");
+
+            // add shape geometry
+            $n_geometry = $n_shapenode->addChild('Geometry', "", "http://www.yworks.com/xml/graphml");
+            $n_geometry['width'] = "350";  // 40 * 7
+            $n_geometry['height'] = "75";  // 40 * 7
+
+            // add shapetype
+            $n_shape = $n_shapenode->addChild('Shape', null, "http://www.yworks.com/xml/graphml");
+            $n_shape['type'] = $grouptype['shape'];
+
+            // ad shape fill color
+            $n_fill = $n_shapenode->addChild("Fill", null, "http://www.yworks.com/xml/graphml");
+            $n_fill['color'] = $grouptype['color'];
+        }
+    }
+
+    /**
+     * @param $graph
+     */
+    private function tographml_edges($graph): void
+    {
+        foreach ($this->hierarchy as $meid => $parentids) {
+
+            $megrouptype = $this->groups[$meid]['type'];
+            // ignore pseudogroup
+            if ($this->ignorebyGrouptype($megrouptype)) {
+                continue;
+            }
+
+            $parents = empty($parentids) ? ['0'] : $parentids;
+
+            foreach ($parents as $parent) {
+                if ($parent == '0') {
+                    continue;
+                }
+
+                $parenttype = $this->groups[$parent]['type'];
+                // apply ignorefilter
+                if ($this->ignorebyGrouptype($parenttype)) {
+                    continue;
+                }
+
+                // add edge
+                $n_edge = $graph->addChild('edge');
+                $n_edge['source'] = $meid;
+                $n_edge['target'] = $parent;
+                $n_edge['id'] = "{$meid}_$parent";
+            }
+        }
+    }
+
+    /**
+     * @param $grouptypeid
+     * @return bool
+     */
+    private function ignorebyGrouptype($grouptypeid): bool
+    {
+        foreach ($this->groupidstoignore as $interval) {
+            if (($grouptypeid >= $interval[0]) && ($grouptypeid <= $interval[1])) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -555,7 +524,7 @@ function reportauthasmd($definition, $indent = "")
 function read_auth_by_status($masterdata_jsonpath, array &$authdefinitions, array &$pseudogroups): array
 {
     $statuus = find_in_JSONPath($masterdata_jsonpath, '$..churchauth.status.*');
-    if (empty($statuus)){
+    if (empty($statuus)) {
         $statuus = [];
     }
     $statusauth = [];  // here we collect the groptype auths
@@ -599,7 +568,7 @@ function read_auth_by_status($masterdata_jsonpath, array &$authdefinitions, arra
 function read_auth_by_grouptypes(JsonObject $masterdata_jsonpath, array &$authdefinitions, array &$pseudogroups): array
 {
     $grouptypes = find_in_JSONPath($masterdata_jsonpath, '$.data.churchauth.cdb_gruppentyp.*');
-    if (empty($groutypes)){
+    if (empty($groutypes)) {
         $grouptypes = [];
     }
 
@@ -657,7 +626,7 @@ function read_auth_by_person($masterdata_jsonpath, array &$authdefinitions, arra
     $personauth = [];
 
     $personauths = find_in_JSONPath($masterdata_jsonpath, '$..person[?(@.auth)]');
-    if (empty($personauths)){
+    if (empty($personauths)) {
         $personauths = [];
     }
 
@@ -702,7 +671,7 @@ function read_auth_by_groups(JsonObject $masterdata_jsonpath, array &$authdefini
     //$groups = find_in_JSONPath($masterdata_jsonpath,'$..groups.*');
 
     $groupmemberauth = find_in_JSONPath($masterdata_jsonpath, '$.data.churchauth.groupMemberstatus[?(@.auth)]');
-    if (empty($groupmemberauth)){
+    if (empty($groupmemberauth)) {
         $groupmemberauth = [];
     }
 
@@ -1053,9 +1022,11 @@ function find_roles_in_whatcanwho($whatcanwho)
 
 function create_graphml_for_roles($similarities)
 {
-    $style = ["ZGF" => [
-     'color' => "green"
-    ]];
+    $style = [
+        "ZGF" => [
+            'color' => "green"
+        ]
+    ];
 
     $doc = simplexml_load_string(GRAPHMLTEPLATE);
     $graph = $doc->graph[0];
@@ -1074,7 +1045,7 @@ function create_graphml_for_roles($similarities)
     // create the nodes
     foreach ($nodes as $key => $nodeid) {
 
-        $groupcolor = (strpos($key, 'ZGF') !== false)? '#00ff00': '#0000ff';
+        $groupcolor = (strpos($key, 'ZGF') !== false) ? '#00ff00' : '#0000ff';
 
         $n_node = $graph->addChild("node");
         $n_node['id'] = $nodeid;  // id is the graphml id
@@ -1152,7 +1123,7 @@ function encodexmlentities($key): string
  */
 function escapedquotes($input): string
 {
-    return str_replace( "\"", "'", $input);
+    return str_replace("\"", "'", $input);
 }
 
 /**
@@ -1212,24 +1183,27 @@ $grouptypedefs = [
 
     # globale berechtiungsvergabe
 
-    20 => ['color' => "#bfbfff", 'type' => "Status", 'prefix' => "ST", 'shape' => "octagon"],
-    21 => ['color' => "#009900", 'type' => "Gruppentyp", 'prefix' => "GRTYP", 'shape' => "hexagon"],
-    22 => ['color' => "#ffffff", 'type' => "Global Definition", 'prefix' => "GL", 'shape' => "ellipse"],
+    -20 => ['color' => "#bfbfff", 'type' => "Status", 'prefix' => "ST", 'shape' => "octagon"],
+    -21 => ['color' => "#009900", 'type' => "Gruppentyp", 'prefix' => "GRTYP", 'shape' => "hexagon"],
+    -22 => ['color' => "#ffffff", 'type' => "Global Definition", 'prefix' => "GL", 'shape' => "ellipse"],
 
     # Gruppentypberechtigungen
 
-    30 => ['color' => "#ffffff", 'type' => "Gruppenrolle", 'prefix' => "GRRL", 'shape' => "ellipse"],
-    31 => ['color' => "#eeeeee", 'type' => "Gruppenrollen", 'prefix' => "GRRLN", 'shape' => "ellipse"],
-    32 => ['color' => "#ffffff", 'type' => "Gruppentyprolle", 'prefix' => "GTRL", 'shape' => "ellipse"],
-    33 => ['color' => "#eeeeee", 'type' => "Gruppentyprollen", 'prefix' => "GTRLN", 'shape' => "ellipse"],
+    -30 => ['color' => "#ffffff", 'type' => "Gruppenrolle", 'prefix' => "GRRL", 'shape' => "ellipse"],
+    -31 => ['color' => "#eeeeee", 'type' => "Gruppenrollen", 'prefix' => "GRRLN", 'shape' => "ellipse"],
+    -32 => ['color' => "#ffffff", 'type' => "Gruppentyprolle", 'prefix' => "GTRL", 'shape' => "ellipse"],
+    -33 => ['color' => "#eeeeee", 'type' => "Gruppentyprollen", 'prefix' => "GTRLN", 'shape' => "ellipse"],
     # braucht man nicht
 
-    # Berechtiungen: Die BER korellieren mit den Actors
+    # Berechtigungen: Die BER korrelieren mit den Actors
 
-    50 => ['color' => "#f0f000", 'type' => "Wiki", 'prefix' => "Wiki", 'shape' => "roundrectangle"],
-    60 => ['color' => "#7ebce6", 'type' => "Person", 'prefix' => "PRS", 'shape' => "roundrectangle"],
+    -50 => ['color' => "#f0f000", 'type' => "Wiki", 'prefix' => "Wiki", 'shape' => "roundrectangle"],
+    -60 => ['color' => "#7ebce6", 'type' => "Person", 'prefix' => "PRS", 'shape' => "roundrectangle"],
 
-    90 => ['color' => "#fffff", 'type' => "Legende", 'prefix' => "LG", 'shape' => "rectangle"]
+    -90 => ['color' => "#fffff", 'type' => "Legende", 'prefix' => "LG", 'shape' => "rectangle"],
+
+    -1 => ['color' => "#ff0000", 'type' => "Pseudo", 'prefix' => "PSEUDO", 'shape' => "parallelogram"],
+
 ];
 
 
@@ -1251,32 +1225,31 @@ $authdefinitions = [];  // here we collect auth definitions
 $pseudogroups = [];  // here we collect pseudogroups such as GRL, GRRLN
 
 // reading auth by person
-echo "creading auth by person\n";
+echo "creating auth by person\n";
 list($personmissing, $personauth) = read_auth_by_person($masterdata_jsonpath, $authdefinitions, $pseudogroups);
 
 // reading auth by status
-echo "creading auth by status\n";
+echo "creating auth by status\n";
 list($statusauth) = read_auth_by_status($masterdata_jsonpath, $authdefinitions, $pseudogroups);
 
 // handle grouptypes
-echo "creading auth by grouptypes\n";
+echo "creating auth by grouptypes\n";
 list($grouptypeauth) = read_auth_by_grouptypes($masterdata_jsonpath, $authdefinitions, $pseudogroups);
 
 // handle groups
-echo "creading auth by groups\n";
+echo "creating auth by groups\n";
 list($groupmissing, $groupauth) = read_auth_by_groups($masterdata_jsonpath, $authdefinitions, $pseudogroups);
 
-//
 
 $grouphierarchy = new GroupHierarchy();
 $grouphierarchy->ctbaseurl = $ctdomain;
 
 $grouphierarchy->setgrouptypedefs($grouptypedefs);
 
-$grouphierarchy->add("MISSING Parent");
+$grouphierarchy->add("MISSING Parent", [], ['type' => 0]);
 
 // reading groups
-echo "creading groups\n";
+echo "creating groups\n";
 $report2 = [
     'url' => "$ctdomain/api/groups",
     'method' => "GET",
@@ -1372,17 +1345,37 @@ echo "create json report\n";
 create_jsonreport($authdefinitions,
     "$filebase.json");
 
-// write puml file
-echo "create plantuml file\n";
-$pumlfile = fopen("$filebase.puml", "w");
-fwrite($pumlfile, $grouphierarchy->toplantuml());
-fclose($pumlfile);
+// write graphml files
+echo "create graphml files\n";
 
-// write graphml file
-echo "create graphml file\n";
-$graphmlfile = fopen("$filebase.graphml", "w");
-fwrite($graphmlfile, $grouphierarchy->tographml());
-fclose($graphmlfile);
+if (array_key_exists('extracts', CREDENTIALS)) {
+    $extracts = CREDENTIALS['extracts'];
+} else {
+    $extracts = [
+        '' => ['groupidstoignore' => [[-10000, -1], [6, 6]]],
+    ];
+}
+
+// create graphic extracts.
+foreach ($extracts as $extractname => $extract){
+    $grouptypestoignore = $extract['groupidstoignore'];
+
+    // write graphmlfile
+    $graphmlfilename = "$filebase$extractname.graphml";
+    echo ("writing $graphmlfilename " . json_encode($grouptypestoignore) . "\n");
+
+    $graphmlfile = fopen("$filebase$extractname.graphml", "w");
+    $grouphierarchy->groupidstoignore = $extract['groupidstoignore'];
+    fwrite($graphmlfile, $grouphierarchy->tographml());
+    fclose($graphmlfile);
+
+    // write puml file
+    $pumlfilename = "$filebase$extractname.puml";
+    echo ("writing $pumlfilename " . json_encode($grouptypestoignore) . "\n");
+    $pumlfile = fopen("$pumlfilename", "w");
+    fwrite($pumlfile, $grouphierarchy->toplantuml());
+    fclose($pumlfile);
+}
 
 // report results
 
@@ -1425,11 +1418,12 @@ $miscreport = [];
 $miscreport['whocanwhat'] = $whocanwhat;
 $miscreport['whatcanhwo'] = $whatcanwho;
 $miscreport['whoelse'] = $whoelse;
+
+//
 fwrite($miscjsonfile, json_encode($miscreport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 fclose($miscjsonfile);
 
 // write misc graphml to find roles
-
 $miscgraphmlfile = fopen("$filebase.misc.graphml", "w");
 fwrite($miscgraphmlfile, create_graphml_for_roles($miscreport['whoelse']));
 fclose($miscgraphmlfile);

@@ -2,9 +2,17 @@
 
 ## Prerequisites
 
-1. cteate a credential store
+1. create a credential store
 
-   `cp ../CT-credentialstroe.php.template CT-credentialstore.php` 
+```bash
+
+cd ctapshowcase
+cp CT-credentialstroe.php.template CT-credentialstore.php
+```
+
+now edit `CT-credentialstore.php`. you see the placeholder which you should fill.
+
+ 
 
 ## usasge
 
@@ -31,9 +39,14 @@ every showcase produces at least the following file
 
 ## v1-churchauth--all.php
 
-this generates repoprts about access rights in your instance. It furtheron cre  ates a planuml and a graphml 
-file for your groups. Note that you need tools to visualize these files (plantuml.com), 
-[yed](https://yworks.com/products/yed)
+this generates repoprts about access rights in your instance. It furtheron creates plantuml and a graphml 
+files for your groups. Note that you need tools to visualize these files 
+
+* [plantuml](https://plantuml.com), 
+* [yed](https://yworks.com/products/yed)
+
+
+
 
 
 
