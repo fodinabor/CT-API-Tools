@@ -1,0 +1,11 @@
+# List the start up tasks. Learn more https://www.gitpod.io/docs/config-start-tasks/
+tasks:
+  - init: echo 'init script' # runs during prebuild
+    command: echo 'start script'
+
+  - init: echo 'install graphviz for plantuml' # runs during prebuild
+    command: sudo apt-get install graphviz* -y
+
+  - init: echo 'install php dependencies' # runs during prebuild
+    command: cd ctapishowcase;composer -n install
+
